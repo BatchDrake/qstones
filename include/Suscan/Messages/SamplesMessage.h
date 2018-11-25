@@ -27,9 +27,10 @@
 namespace Suscan {
   class SamplesMessage: public Message {
   private:
-    struct suscan_analyzer_sample_batch_msg *message; // Convenience reference
+    struct suscan_analyzer_sample_batch_msg *message = nullptr; // Convenience reference
 
   public:
+    SamplesMessage();
     SamplesMessage(struct suscan_analyzer_sample_batch_msg *msg);
   };
 };

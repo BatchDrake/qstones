@@ -27,9 +27,10 @@
 namespace Suscan {
   class InspectorMessage: public Message {
   private:
-    struct suscan_analyzer_inspector_msg *message; // Convenience reference
+    struct suscan_analyzer_inspector_msg *message = nullptr; // Convenience reference
 
   public:
+    InspectorMessage();
     InspectorMessage(struct suscan_analyzer_inspector_msg *msg);
   };
 };

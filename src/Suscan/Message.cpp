@@ -22,9 +22,15 @@
 using namespace Suscan;
 
 uint32_t
-Message::getType(void)
+Message::getType(void) const
 {
   return this->type;
+}
+
+Message::Message()
+{
+  this->type = 0;
+  this->c_message = nullptr;
 }
 
 // The madness below fixes the problem of the lifecycle of objects passed
@@ -36,9 +42,8 @@ Message::getType(void)
 // C-Level constructor
 Message::Message(uint32_t type, void *c_message)
 {
-  auto deleter = [&](void *ptr) { suscan_analyzer_dispose_message(type, ptr); };
-
   this->type = type;
+  auto deleter = [=](void *ptr) { suscan_analyzer_dispose_message(type, ptr); };
   this->c_message = std::shared_ptr<void>(c_message, deleter);
 }
 
@@ -60,7 +65,7 @@ Message::operator=(Message &&rv)
 }
 
 // Copy constructor
-Message::Message(Message &rv)
+Message::Message(const Message &rv)
 {
   this->type = rv.type;
   this->c_message = rv.c_message;
@@ -74,4 +79,10 @@ Message::operator=(const Message &rv)
   this->c_message = rv.c_message;
 
   return *this;
+}
+
+// Default destructor
+Message::~Message()
+{
+  // Lalalala
 }

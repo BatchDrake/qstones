@@ -21,6 +21,8 @@
 
 using namespace Suscan;
 
+ChannelMessage::ChannelMessage() : Message() { }
+
 ChannelMessage::ChannelMessage(struct suscan_analyzer_channel_msg *msg) :
   Message(SUSCAN_ANALYZER_MESSAGE_TYPE_CHANNEL, msg)
 {

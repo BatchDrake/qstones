@@ -1,5 +1,5 @@
 //
-//    PSDMessage.h: PSD Message
+//    SamplesMessage.cpp: Samples message implementation
 //    Copyright (C) 2018 Gonzalo José Carracedo Carballal
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -16,26 +16,12 @@
 //    License along with this program.  If not, see
 //    <http://www.gnu.org/licenses/>
 //
-#ifndef MESSAGES_PSD_MESSAGE_H
-#define MESSAGES_PSD_MESSAGE_H
 
-#include <Suscan/Compat.h>
-#include <Suscan/Message.h>
+#include <Suscan/Messages/GenericMessage.h>
 
-#include <analyzer/analyzer.h>
+using namespace Suscan;
 
-namespace Suscan {
-  class PSDMessage: public Message {
-  private:
-    struct suscan_analyzer_psd_msg *message = nullptr; // Convenience reference
+GenericMessage::GenericMessage() : Message() { }
 
-  public:
-    SUSCOUNT size(void) const;
-    const SUFLOAT *get(void) const;
+GenericMessage::GenericMessage(uint32_t type, void *userdata) : Message(type, userdata) { }
 
-    PSDMessage();
-    PSDMessage(struct suscan_analyzer_psd_msg *msg);
-  };
-};
-
-#endif // MESSAGES_PSD_MESSAGE_H

@@ -40,7 +40,9 @@ SOURCES += \
     src/Suscan/Messages/PSDMessage.cpp \
     src/Suscan/Messages/ChannelMessage.cpp \
     src/Suscan/Messages/InspectorMessage.cpp \
-    src/Suscan/Messages/SamplesMessage.cpp
+    src/Suscan/Messages/SamplesMessage.cpp \
+    src/Gqrx/CPlotter.cpp \
+    src/Suscan/Messages/GenericMessage.cpp
 
 HEADERS += \
     include/Suscan/Analyzer.h \
@@ -55,7 +57,9 @@ HEADERS += \
     include/Suscan/Message.h \
     include/Suscan/Messages/ChannelMessage.h \
     include/Suscan/Messages/InspectorMessage.h \
-    include/Suscan/Messages/SamplesMessage.h
+    include/Suscan/Messages/SamplesMessage.h \
+    include/Gqrx/CPlotter.h \
+    include/Suscan/Messages/GenericMessage.h
 
 FORMS += \
     ui/config.ui \

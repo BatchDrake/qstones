@@ -19,6 +19,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include <QObject>
 #include <functional>
 
 #include <Suscan/Compat.h>
@@ -29,20 +30,23 @@ namespace Suscan {
   class Message {
   private:
     uint32_t type;
-    std::shared_ptr<void> c_message;
 
     // These constructors are to be called by derivate classes
   protected:
+    std::shared_ptr<void> c_message;
     Message(uint32_t type, void *c_message);
 
   public:
-    uint32_t getType(void);
+    uint32_t getType(void) const;
 
-    Message(Message &);
+    Message(const Message &);
     Message(Message &&);
 
     Message& operator=(const Message &);
     Message& operator=(Message &&);
+
+    Message(); // Come on
+    virtual ~Message(); // And now Message is polymorphic. TADA!!
   };
 };
 

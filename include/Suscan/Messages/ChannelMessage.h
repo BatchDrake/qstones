@@ -27,9 +27,10 @@
 namespace Suscan {
   class ChannelMessage: public Message {
   private:
-    struct suscan_analyzer_channel_msg *message; // Convenience reference
+    struct suscan_analyzer_channel_msg *message = nullptr; // Convenience reference
 
   public:
+    ChannelMessage();
     ChannelMessage(struct suscan_analyzer_channel_msg *msg);
   };
 };

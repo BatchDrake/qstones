@@ -1,5 +1,5 @@
 //
-//    PSDMessage.h: PSD Message
+//    SamplesMessage.h: Sample Batch message
 //    Copyright (C) 2018 Gonzalo José Carracedo Carballal
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -16,8 +16,8 @@
 //    License along with this program.  If not, see
 //    <http://www.gnu.org/licenses/>
 //
-#ifndef MESSAGES_PSD_MESSAGE_H
-#define MESSAGES_PSD_MESSAGE_H
+#ifndef MESSAGES_GENERIC_MESSAGE_H
+#define MESSAGES_GENERIC_MESSAGE_H
 
 #include <Suscan/Compat.h>
 #include <Suscan/Message.h>
@@ -25,17 +25,11 @@
 #include <analyzer/analyzer.h>
 
 namespace Suscan {
-  class PSDMessage: public Message {
-  private:
-    struct suscan_analyzer_psd_msg *message = nullptr; // Convenience reference
-
+  class GenericMessage: public Message {
   public:
-    SUSCOUNT size(void) const;
-    const SUFLOAT *get(void) const;
-
-    PSDMessage();
-    PSDMessage(struct suscan_analyzer_psd_msg *msg);
+    GenericMessage();
+    GenericMessage(uint32_t type, void *data);
   };
 };
 
-#endif // MESSAGES_PSD_MESSAGE_H
+#endif // MESSAGES_GENERIC_MESSAGE_H

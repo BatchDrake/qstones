@@ -21,6 +21,8 @@
 
 using namespace Suscan;
 
+SamplesMessage::SamplesMessage() : Message() { }
+
 SamplesMessage::SamplesMessage(struct suscan_analyzer_sample_batch_msg *msg) :
   Message(SUSCAN_ANALYZER_MESSAGE_TYPE_SAMPLES, msg)
 {

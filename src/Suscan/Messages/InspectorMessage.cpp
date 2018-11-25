@@ -21,6 +21,8 @@
 
 using namespace Suscan;
 
+InspectorMessage::InspectorMessage() : Message() { }
+
 InspectorMessage::InspectorMessage(struct suscan_analyzer_inspector_msg *msg) :
   Message(SUSCAN_ANALYZER_MESSAGE_TYPE_INSPECTOR, msg)
 {

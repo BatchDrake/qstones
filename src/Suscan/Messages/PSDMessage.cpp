@@ -21,9 +21,35 @@
 
 using namespace Suscan;
 
+PSDMessage::PSDMessage() : Message() { }
+
 PSDMessage::PSDMessage(struct suscan_analyzer_psd_msg *msg) :
   Message(SUSCAN_ANALYZER_MESSAGE_TYPE_PSD, msg)
 {
+  unsigned int i;
+  SUSCOUNT half_size{msg->psd_size / 2};
+  SUFLOAT tmp;
   this->message = msg;
+
+  for (i = 0; i < half_size; ++i) {
+    tmp = msg->psd_data[i + half_size];
+    msg->psd_data[i + half_size] = SU_POWER_DB(msg->psd_data[i]);
+    msg->psd_data[i] = SU_POWER_DB(tmp);
+  }
 }
 
+SUSCOUNT
+PSDMessage::size(void) const
+{
+  const struct suscan_analyzer_psd_msg *msg
+      = static_cast<struct suscan_analyzer_psd_msg *>(this->c_message.get());
+  return msg->psd_size;
+}
+
+const SUFLOAT *
+PSDMessage::get(void) const
+{
+  const struct suscan_analyzer_psd_msg *msg
+      = static_cast<struct suscan_analyzer_psd_msg *>(this->c_message.get());
+  return msg->psd_data;
+}

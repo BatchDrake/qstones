@@ -32,11 +32,12 @@
 #include <Suscan/Messages/InspectorMessage.h>
 #include <Suscan/Messages/PSDMessage.h>
 #include <Suscan/Messages/SamplesMessage.h>
+#include <Suscan/Messages/GenericMessage.h>
 
 #include <analyzer/analyzer.h>
 
 namespace Suscan {
-  class Analyzer: QObject
+  class Analyzer: public QObject
   {
     Q_OBJECT
 
@@ -48,20 +49,25 @@ namespace Suscan {
     MQ mq;
 
   signals:
-    void psd_message(Suscan::PSDMessage message);
+    void psd_message(const Suscan::PSDMessage &message);
+    void read_error(void);
+    void eos(void);
+    void halted(void);
 
   public slots:
-    void captureMessage(Message message);
+    void captureMessage(const Suscan::Message &message);
 
   public:
     void *read(uint32_t &type);
+    void halt(void);
+
     Analyzer(
         struct suscan_analyzer_params const& params,
         Source::Config const& config);
     ~Analyzer();
   };
 
-  class Analyzer::AsyncThread: QThread
+  class Analyzer::AsyncThread: public QThread
   {
     Q_OBJECT
 
@@ -73,10 +79,7 @@ namespace Suscan {
     AsyncThread(Analyzer *);
 
   signals:
-    void message(Message);
-    void read_error(void);
-    void eos(void);
-    void halted(void);
+    void message(const Suscan::Message &);
   };
 
 };

@@ -21,11 +21,13 @@
 #define QSTONES_APPLICATION_H
 
 #include <QMainWindow>
+#include <Gqrx/CPlotter.h>
 
 #include <ConfigDialog.h>
 #include <ui_mainui.h>
 
 #include <Suscan/Source.h>
+#include <Suscan/Analyzer.h>
 
 namespace QStones {
   class Application : public QMainWindow
@@ -33,22 +35,44 @@ namespace QStones {
     Q_OBJECT
 
   private:
-    Suscan::Source::Config currProfile;
+    enum State {
+      HALTED,
+      HALTING,
+      RUNNING
+    };
 
+    // Analyzer object
+    Suscan::Source::Config currProfile;
+    std::unique_ptr<Suscan::Analyzer> analyzer;
+    State state;
+
+    // UI
     Ui_Main *ui;
     ConfigDialog *configDialog;
 
+    // Custom widgets
+    CPlotter *plotter; // Deleted by parent
+
     void setProfile(Suscan::Source::Config);
     void connectAll(void);
+    void setUIState(State state);
+    void connectAnalyzer(void);
 
   public:
     void run(void);
+
+    void startCapture(void);
+    void stopCapture(void);
 
     explicit Application(QWidget *parent = nullptr);
     ~Application();
 
   public slots:
     void onTriggerSetup(bool);
+    void onTriggerCapture(bool);
+    void onTriggerStop(bool);
+    void onAnalyzerHalted(void);
+    void onPSDMessage(const Suscan::PSDMessage &message);
   };
 };
 

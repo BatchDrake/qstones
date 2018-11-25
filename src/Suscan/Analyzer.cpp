@@ -17,7 +17,17 @@
 //    <http://www.gnu.org/licenses/>
 //
 
+#include <iostream>
+
+#include <QMetaType>
 #include <Suscan/Analyzer.h>
+
+Q_DECLARE_METATYPE(Suscan::Message);
+Q_DECLARE_METATYPE(Suscan::ChannelMessage);
+Q_DECLARE_METATYPE(Suscan::InspectorMessage);
+Q_DECLARE_METATYPE(Suscan::PSDMessage);
+Q_DECLARE_METATYPE(Suscan::SamplesMessage);
+Q_DECLARE_METATYPE(Suscan::GenericMessage);
 
 using namespace Suscan;
 
@@ -53,17 +63,8 @@ Analyzer::AsyncThread::run()
 
       // Exit conditions
       case SUSCAN_WORKER_MSG_TYPE_HALT:
-        emit halted();
-        running = false;
-        break;
-
       case SUSCAN_ANALYZER_MESSAGE_TYPE_EOS:
-        emit eos();
-        running = false;
-        break;
-
       case SUSCAN_ANALYZER_MESSAGE_TYPE_READ_ERROR:
-        emit read_error();
         running = false;
         break;
 
@@ -74,7 +75,8 @@ Analyzer::AsyncThread::run()
     }
   } while (running);
 
-  suscan_analyzer_dispose_message(type, data);
+  // Emit exit reason
+  emit message(GenericMessage(type, data));
 }
 
 Analyzer::AsyncThread::AsyncThread(Analyzer *owner)
@@ -89,12 +91,33 @@ Analyzer::read(uint32_t &type)
   return suscan_analyzer_read(this->instance, &type);
 }
 
+void
+Analyzer::halt(void)
+{
+  suscan_analyzer_req_halt(this->instance);
+}
 
 // Signal slots
 void
-Analyzer::captureMessage(Message)
+Analyzer::captureMessage(const Suscan::Message &msg)
 {
-  // TODO: implement me!
+  switch (msg.getType()) {
+    case SUSCAN_ANALYZER_MESSAGE_TYPE_PSD:
+      emit psd_message(static_cast<const Suscan::PSDMessage &>(msg));
+      break;
+
+    case SUSCAN_ANALYZER_MESSAGE_TYPE_EOS:
+      emit eos();
+      break;
+
+    case SUSCAN_WORKER_MSG_TYPE_HALT:
+      emit halted();
+      break;
+
+    case SUSCAN_ANALYZER_MESSAGE_TYPE_READ_ERROR:
+      emit read_error();
+      break;
+  }
 }
 
 // Object construction and destruction
@@ -109,7 +132,18 @@ Analyzer::Analyzer(
 
   this->asyncThread = std::make_unique<AsyncThread>(this);
 
-  // TODO: Connect signals
+  qRegisterMetaType<Suscan::Message>();
+  qRegisterMetaType<Suscan::GenericMessage>();
+  qRegisterMetaType<Suscan::PSDMessage>();
+
+  connect(
+        this->asyncThread.get(),
+        SIGNAL(message(const Suscan::Message &)),
+        this,
+        SLOT(captureMessage(const Suscan::Message &)),
+        Qt::QueuedConnection);
+
+  this->asyncThread.get()->start();
 }
 
 Analyzer::~Analyzer()
