@@ -92,6 +92,12 @@ Analyzer::read(uint32_t &type)
 }
 
 void
+Analyzer::setFrequency(SUFREQ freq)
+{
+  SU_ATTEMPT(suscan_analyzer_set_freq(this->instance, freq));
+}
+
+void
 Analyzer::halt(void)
 {
   suscan_analyzer_req_halt(this->instance);
@@ -120,21 +126,32 @@ Analyzer::captureMessage(const Suscan::Message &msg)
   }
 }
 
+bool Analyzer::registered = false; // Yes, C++!
+
+void
+Analyzer::assertTypeRegistration(void)
+{
+  if (!Analyzer::registered) {
+    qRegisterMetaType<Suscan::Message>();
+    qRegisterMetaType<Suscan::GenericMessage>();
+    qRegisterMetaType<Suscan::PSDMessage>();
+    Analyzer::registered = true;
+  }
+}
+
 // Object construction and destruction
 Analyzer::Analyzer(
     struct suscan_analyzer_params const& params,
     Source::Config const& config)
 {
+  assertTypeRegistration();
+
   SU_ATTEMPT(this->instance = suscan_analyzer_new(
         &params,
         config.instance,
         &mq.mq));
 
   this->asyncThread = std::make_unique<AsyncThread>(this);
-
-  qRegisterMetaType<Suscan::Message>();
-  qRegisterMetaType<Suscan::GenericMessage>();
-  qRegisterMetaType<Suscan::PSDMessage>();
 
   connect(
         this->asyncThread.get(),

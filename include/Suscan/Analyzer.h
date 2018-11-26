@@ -48,6 +48,9 @@ namespace Suscan {
     std::unique_ptr<AsyncThread> asyncThread;
     MQ mq;
 
+    static bool registered;
+    static void assertTypeRegistration(void);
+
   signals:
     void psd_message(const Suscan::PSDMessage &message);
     void read_error(void);
@@ -59,6 +62,7 @@ namespace Suscan {
 
   public:
     void *read(uint32_t &type);
+    void setFrequency(SUFREQ freq);
     void halt(void);
 
     Analyzer(

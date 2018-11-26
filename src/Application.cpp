@@ -21,6 +21,7 @@
 
 #include <Suscan/Library.h>
 
+#include <QMessageBox>
 #include "Application.h"
 
 using namespace QStones;
@@ -45,6 +46,18 @@ Application::connectAll(void)
         SIGNAL(triggered(bool)),
         this,
         SLOT(onTriggerStop(bool)));
+
+  connect(
+        this->ui->sbRXFreq,
+        SIGNAL(valueChanged(int)),
+        this,
+        SLOT(onFreqChanged(int)));
+
+  connect(
+        this->ui->sWRatio,
+        SIGNAL(valueChanged(int)),
+        this,
+        SLOT(onSwPropChanged(int)));
 }
 
 void
@@ -65,10 +78,15 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   // Add custom widgets
   this->plotter = new CPlotter(this);
   this->ui->verticalSplitter->insertWidget(0, this->plotter);
-  this->plotter->setSampleRate(250000);
+  this->plotter->setSampleRate(44100); // Dummy sample rate
+  this->plotter->resetHorizontalZoom();
 
   // Setup UI state
   this->setUIState(HALTED);
+
+  this->setTunerFrequency(this->prop.tunFreq);
+  this->setIfFrequency(this->prop.ifFreq);
+  this->setSpectrumWaterfallProportion(this->prop.swProp);
 }
 
 void
@@ -159,6 +177,45 @@ Application::onPSDMessage(const Suscan::PSDMessage &msg)
 }
 
 void
+Application::setTunerFrequency(SUFREQ freq, bool updateUi)
+{
+  this->prop.tunFreq = freq;
+
+  if (this->state == RUNNING)
+    this->analyzer.get()->setFrequency(freq);
+
+  if (updateUi) {
+    this->plotter->setCenterFreq(static_cast<quint64>(freq));
+    this->plotter->setDemodCenterFreq(static_cast<quint64>(this->prop.ifFreq + freq));
+    this->ui->sbRXFreq->setValue(static_cast<int>(freq));
+  }
+}
+
+void
+Application::setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi)
+{
+  this->prop.swProp = prop;
+
+  this->plotter->setPercent2DScreen(static_cast<int>(prop * 100));
+
+  if (updateUi)
+    this->ui->sWRatio->setValue(static_cast<int>(prop * 100));
+}
+
+void
+Application::setIfFrequency(SUFREQ freq, bool updateUi)
+{
+  this->prop.ifFreq = freq;
+
+  // TODO: Change demodulator frequency
+
+  if (updateUi) {
+    this->plotter->setDemodCenterFreq(static_cast<quint64>(this->prop.tunFreq + freq));
+    this->ui->sbIFFreq->setValue(static_cast<int>(freq));
+  }
+}
+
+void
 Application::onTriggerSetup(bool)
 {
   this->configDialog->exec();
@@ -175,6 +232,22 @@ void
 Application::onTriggerStop(bool)
 {
   this->stopCapture();
+}
+
+void
+Application::onFreqChanged(int freq)
+{
+  this->setTunerFrequency(freq, false);
+
+  // Sync plotter
+  this->plotter->setCenterFreq(static_cast<quint64>(freq));
+  this->plotter->setDemodCenterFreq(static_cast<quint64>(this->prop.ifFreq + freq));
+}
+
+void
+Application::onSwPropChanged(int prop)
+{
+  this->setSpectrumWaterfallProportion(static_cast<float>(prop) / 100.f, false);
 }
 
 Application::~Application()

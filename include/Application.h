@@ -29,7 +29,23 @@
 #include <Suscan/Source.h>
 #include <Suscan/Analyzer.h>
 
+#define QSTONES_DEFAULT_TUNER_FREQ 143049000
+#define QSTONES_DEFAULT_IF_FREQ    1000
+#define QSTONES_DEFAULT_PEAK_HOLD  false
+#define QSTONES_DEFAULT_LOCK       true
+#define QSTONES_DEFAULT_WF_PROP    SU_ADDSFX(.5)
+#define QSTONES_DEFAULT_SNR_BW     SU_ADDSFX(.16)
+
 namespace QStones {
+  struct ApplicationProperties {
+    SUFREQ  tunFreq       = QSTONES_DEFAULT_TUNER_FREQ;
+    SUFREQ  ifFreq        = QSTONES_DEFAULT_IF_FREQ;
+    bool    peakHold      = QSTONES_DEFAULT_PEAK_HOLD;
+    bool    lockPandapter = QSTONES_DEFAULT_LOCK;
+    SUFLOAT snrBw         = QSTONES_DEFAULT_SNR_BW;
+    SUFLOAT swProp        = QSTONES_DEFAULT_WF_PROP;
+  };
+
   class Application : public QMainWindow
   {
     Q_OBJECT
@@ -45,6 +61,8 @@ namespace QStones {
     Suscan::Source::Config currProfile;
     std::unique_ptr<Suscan::Analyzer> analyzer;
     State state;
+
+    struct ApplicationProperties prop;
 
     // UI
     Ui_Main *ui;
@@ -64,6 +82,9 @@ namespace QStones {
     void startCapture(void);
     void stopCapture(void);
 
+    void setTunerFrequency(SUFREQ freq, bool updateUi = true);
+    void setIfFrequency(SUFREQ freq, bool updateUi = true);
+    void setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi = true);
     explicit Application(QWidget *parent = nullptr);
     ~Application();
 
@@ -73,6 +94,9 @@ namespace QStones {
     void onTriggerStop(bool);
     void onAnalyzerHalted(void);
     void onPSDMessage(const Suscan::PSDMessage &message);
+    void onFreqChanged(int);
+    void onSwPropChanged(int);
+
   };
 };
 
