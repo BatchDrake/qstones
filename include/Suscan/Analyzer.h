@@ -61,9 +61,11 @@ namespace Suscan {
     void captureMessage(const Suscan::Message &message);
 
   public:
-    void *read(uint32_t &type);
-    void setFrequency(SUFREQ freq);
     SUSCOUNT getSampleRate(void) const;
+
+    void *read(uint32_t &type);
+    void registerBaseBandFilter(suscan_analyzer_baseband_filter_func_t, void *);
+    void setFrequency(SUFREQ freq);
     void halt(void);
 
     Analyzer(
@@ -72,6 +74,7 @@ namespace Suscan {
     ~Analyzer();
   };
 
+  // FIXME: DON'T DERIVE QTHREAD, QTHREAD IS ACTUALLY A THREAD CONTROLLER
   class Analyzer::AsyncThread: public QThread
   {
     Q_OBJECT

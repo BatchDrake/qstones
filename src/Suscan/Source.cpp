@@ -123,16 +123,34 @@ Source::Config::getFreq(void) const
   if (this->instance == nullptr)
     return 0;
 
-  return this->instance->freq;
+  return suscan_source_config_get_freq(this->instance);
 }
 
-SUSCOUNT
+unsigned int
 Source::Config::getSampleRate(void) const
 {
   if (this->instance == nullptr)
     return 0;
 
-  return this->instance->samp_rate;
+  return suscan_source_config_get_samp_rate(this->instance);
+}
+
+enum suscan_source_type
+Source::Config::getType(void) const
+{
+  if (this->instance == nullptr)
+    return SUSCAN_SOURCE_TYPE_SDR;
+
+  return suscan_source_config_get_type(this->instance);
+}
+
+void
+Source::Config::setSampleRate(unsigned int rate)
+{
+  if (this->instance == nullptr)
+    return;
+
+  suscan_source_config_set_samp_rate(this->instance, rate);
 }
 
 ///////////////////////////////// Source Wrappers ////////////////////////////

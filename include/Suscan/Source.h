@@ -52,7 +52,10 @@ namespace Suscan {
   public:
     std::string label(void) const;
     SUFREQ getFreq(void) const;
-    SUSCOUNT getSampleRate() const;
+    unsigned int getSampleRate() const;
+    enum suscan_source_type getType(void) const;
+
+    void setSampleRate(unsigned int value);
 
     Config& operator=(const Config &);
     Config& operator=(Config &&);

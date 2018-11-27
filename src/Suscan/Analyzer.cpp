@@ -92,6 +92,12 @@ Analyzer::read(uint32_t &type)
 }
 
 void
+Analyzer::registerBaseBandFilter(suscan_analyzer_baseband_filter_func_t func, void *privdata)
+{
+  SU_ATTEMPT(suscan_analyzer_register_baseband_filter(this->instance, func, privdata));
+}
+
+void
 Analyzer::setFrequency(SUFREQ freq)
 {
   SU_ATTEMPT(suscan_analyzer_set_freq(this->instance, freq));

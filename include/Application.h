@@ -36,6 +36,9 @@
 #define QSTONES_DEFAULT_WF_PROP    SU_ADDSFX(.5)
 #define QSTONES_DEFAULT_SNR_BW     SU_ADDSFX(.16)
 
+#define QSTONES_FFT_WINDOW_SIZE    2048
+#define QSTONES_MAX_SAMPLE_RATE    100000
+
 namespace QStones {
   struct ApplicationProperties {
     SUFREQ  tunFreq       = QSTONES_DEFAULT_TUNER_FREQ;

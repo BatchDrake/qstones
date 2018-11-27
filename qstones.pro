@@ -42,7 +42,9 @@ SOURCES += \
     src/Suscan/Messages/InspectorMessage.cpp \
     src/Suscan/Messages/SamplesMessage.cpp \
     src/Gqrx/CPlotter.cpp \
-    src/Suscan/Messages/GenericMessage.cpp
+    src/Suscan/Messages/GenericMessage.cpp \
+    src/graves/graves.c \
+    src/EchoDetector.cpp
 
 HEADERS += \
     include/Suscan/Analyzer.h \
@@ -59,7 +61,9 @@ HEADERS += \
     include/Suscan/Messages/InspectorMessage.h \
     include/Suscan/Messages/SamplesMessage.h \
     include/Gqrx/CPlotter.h \
-    include/Suscan/Messages/GenericMessage.h
+    include/Suscan/Messages/GenericMessage.h \
+    include/graves/graves.h \
+    include/EchoDetector.h
 
 FORMS += \
     ui/config.ui \

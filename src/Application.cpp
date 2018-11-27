@@ -170,14 +170,35 @@ Application::startCapture(void)
   struct suscan_analyzer_params default_params =
       suscan_analyzer_params_INITIALIZER;
 
-  default_params.detector_params.window_size = 2048;
+  default_params.detector_params.window_size = QSTONES_FFT_WINDOW_SIZE;
 
   try {
     if (this->state == HALTED) {
-        this->analyzer = std::make_unique<Suscan::Analyzer>(default_params, this->currProfile);
-        this->connectAnalyzer();
-        this->setUIState(RUNNING);
+      if (this->currProfile.getType() == SUSCAN_SOURCE_TYPE_SDR
+          && this->currProfile.getSampleRate() > QSTONES_MAX_SAMPLE_RATE) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(
+              this,
+              "Sample rate too high",
+              "The sample rate of profile \""
+              + QString::fromStdString(this->currProfile.label())
+              + "\" is unusually big ("
+              + QString::number(this->currProfile.getSampleRate())
+              + "). Temporarily reduce it to "
+              + QString::number(QSTONES_MAX_SAMPLE_RATE)
+              + "?",
+              QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+
+        if (reply == QMessageBox::Yes)
+          this->currProfile.setSampleRate(QSTONES_MAX_SAMPLE_RATE);
+        else if (reply == QMessageBox::Cancel)
+          return;
       }
+
+      this->analyzer = std::make_unique<Suscan::Analyzer>(default_params, this->currProfile);
+      this->connectAnalyzer();
+      this->setUIState(RUNNING);
+    }
   } catch (Suscan::Exception &e) {
     (void)  QMessageBox::critical(
           this,
