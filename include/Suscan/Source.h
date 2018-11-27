@@ -29,7 +29,7 @@ namespace Suscan {
   {
   private:
     suscan_source_config_t *config;
-    suscan_source_t *instance;
+    suscan_source_t *instance; // TODO: Make it unique_ptr
 
     friend class Analyzer;
 
@@ -52,7 +52,8 @@ namespace Suscan {
   public:
     std::string label(void) const;
     SUFREQ getFreq(void) const;
-    
+    SUSCOUNT getSampleRate() const;
+
     Config& operator=(const Config &);
     Config& operator=(Config &&);
 

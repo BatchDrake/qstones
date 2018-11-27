@@ -75,6 +75,7 @@ namespace QStones {
     void connectAll(void);
     void setUIState(State state);
     void connectAnalyzer(void);
+    void syncPlotter(void);
 
   public:
     void run(void);
@@ -95,6 +96,7 @@ namespace QStones {
     void onAnalyzerHalted(void);
     void onPSDMessage(const Suscan::PSDMessage &message);
     void onFreqChanged(int);
+    void onIFFreqChanged(int);
     void onSwPropChanged(int);
 
   };

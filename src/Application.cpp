@@ -58,6 +58,12 @@ Application::connectAll(void)
         SIGNAL(valueChanged(int)),
         this,
         SLOT(onSwPropChanged(int)));
+
+  connect(
+        this->ui->sbIFFreq,
+        SIGNAL(valueChanged(int)),
+        this,
+        SLOT(onIFFreqChanged(int)));
 }
 
 void
@@ -66,6 +72,8 @@ Application::setProfile(Suscan::Source::Config profile)
   this->currProfile = profile;
   this->setWindowTitle(
         QString::fromStdString("GRAVES echo detector - " + profile.label()));
+
+  this->plotter->setSampleRate(profile.getSampleRate());
   this->setTunerFrequency(profile.getFreq());
 }
 
@@ -178,6 +186,13 @@ Application::onPSDMessage(const Suscan::PSDMessage &msg)
 }
 
 void
+Application::syncPlotter(void)
+{
+  this->plotter->setCenterFreq(static_cast<quint64>(this->prop.tunFreq));
+  this->plotter->setFilterOffset(static_cast<qint64>(this->prop.ifFreq));
+}
+
+void
 Application::setTunerFrequency(SUFREQ freq, bool updateUi)
 {
   this->prop.tunFreq = freq;
@@ -186,8 +201,7 @@ Application::setTunerFrequency(SUFREQ freq, bool updateUi)
     this->analyzer.get()->setFrequency(freq);
 
   if (updateUi) {
-    this->plotter->setCenterFreq(static_cast<quint64>(freq));
-    this->plotter->setDemodCenterFreq(static_cast<quint64>(this->prop.ifFreq + freq));
+    this->syncPlotter();
     this->ui->sbRXFreq->setValue(static_cast<int>(freq));
   }
 }
@@ -211,7 +225,7 @@ Application::setIfFrequency(SUFREQ freq, bool updateUi)
   // TODO: Change demodulator frequency
 
   if (updateUi) {
-    this->plotter->setDemodCenterFreq(static_cast<quint64>(this->prop.tunFreq + freq));
+    this->syncPlotter();
     this->ui->sbIFFreq->setValue(static_cast<int>(freq));
   }
 }
@@ -239,10 +253,14 @@ void
 Application::onFreqChanged(int freq)
 {
   this->setTunerFrequency(freq, false);
+  this->syncPlotter();
+}
 
-  // Sync plotter
-  this->plotter->setCenterFreq(static_cast<quint64>(freq));
-  this->plotter->setDemodCenterFreq(static_cast<quint64>(this->prop.ifFreq + freq));
+void
+Application::onIFFreqChanged(int freq)
+{
+  this->setIfFrequency(freq, false);
+  this->syncPlotter();
 }
 
 void

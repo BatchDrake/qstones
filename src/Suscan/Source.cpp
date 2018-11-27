@@ -126,6 +126,15 @@ Source::Config::getFreq(void) const
   return this->instance->freq;
 }
 
+SUSCOUNT
+Source::Config::getSampleRate(void) const
+{
+  if (this->instance == nullptr)
+    return 0;
+
+  return this->instance->samp_rate;
+}
+
 ///////////////////////////////// Source Wrappers ////////////////////////////
 Source::Source(Config const& config)
 {
