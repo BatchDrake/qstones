@@ -60,6 +60,7 @@ public:
 
     //void SetSdrInterface(CSdrInterface* ptr){m_pSdrInterface = ptr;}
     void draw();		//call to draw new fft data onto screen plot
+    void setLocked(bool locked) { m_Locked = locked; }
     void setRunningState(bool running) { m_Running = running; }
     void setClickResolution(int clickres) { m_ClickResolution = clickres; }
     void setFilterClickResolution(int clickres) { m_FilterClickResolution = clickres; }
@@ -252,6 +253,7 @@ private:
     bool        m_FilterBoxEnabled;   /*!< Draw filter box. */
     bool        m_TooltipsEnabled;     /*!< Tooltips enabled */
     bool        m_BookmarksEnabled;   /*!< Show/hide bookmarks on spectrum */
+    bool        m_Locked; /* Prevent manual adjust of center frequency */
     int         m_DemodHiCutFreq;
     int         m_DemodLowCutFreq;
     int         m_DemodFreqX;		//screen coordinate x position

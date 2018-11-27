@@ -97,6 +97,12 @@ Analyzer::setFrequency(SUFREQ freq)
   SU_ATTEMPT(suscan_analyzer_set_freq(this->instance, freq));
 }
 
+SUSCOUNT
+Analyzer::getSampleRate(void) const
+{
+  return suscan_analyzer_get_samp_rate(this->instance);
+}
+
 void
 Analyzer::halt(void)
 {

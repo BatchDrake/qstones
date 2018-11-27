@@ -63,6 +63,7 @@ namespace Suscan {
   public:
     void *read(uint32_t &type);
     void setFrequency(SUFREQ freq);
+    SUSCOUNT getSampleRate(void) const;
     void halt(void);
 
     Analyzer(

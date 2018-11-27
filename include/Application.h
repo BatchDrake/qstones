@@ -61,7 +61,7 @@ namespace QStones {
     Suscan::Source::Config currProfile;
     std::unique_ptr<Suscan::Analyzer> analyzer;
     State state;
-
+    SUSCOUNT currSampleRate;
     struct ApplicationProperties prop;
 
     // UI
@@ -76,6 +76,7 @@ namespace QStones {
     void setUIState(State state);
     void connectAnalyzer(void);
     void syncPlotter(void);
+    void setSampleRate(SUSCOUNT rate);
 
   public:
     void run(void);
@@ -83,6 +84,7 @@ namespace QStones {
     void startCapture(void);
     void stopCapture(void);
 
+    void setPandapterLocked(bool value, bool updateUi = true);
     void setTunerFrequency(SUFREQ freq, bool updateUi = true);
     void setIfFrequency(SUFREQ freq, bool updateUi = true);
     void setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi = true);
@@ -98,7 +100,9 @@ namespace QStones {
     void onFreqChanged(int);
     void onIFFreqChanged(int);
     void onSwPropChanged(int);
-
+    void onPlotterNewTunerFreq(qint64 freq);
+    void onPlotterNewIfFreq(qint64 freq, qint64 delta);
+    void onToggleLockPandapter(int state);
   };
 };
 

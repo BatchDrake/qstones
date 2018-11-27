@@ -168,6 +168,7 @@ CPlotter::CPlotter(QWidget *parent) : QFrame(parent)
     m_FilterBoxEnabled = true;
     m_CenterLineEnabled = true;
     m_BookmarksEnabled = true;
+    m_Locked = false;
 
     m_Span = 96000;
     m_SampleFreq = 96000;
@@ -380,9 +381,11 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
             qint64 delta_hz = delta_px * m_Span / m_OverlayPixmap.width();
             if (event->buttons() & Qt::MidButton)
             {
+              if (!m_Locked) {
                 m_CenterFreq += delta_hz;
                 m_DemodCenterFreq += delta_hz;
                 emit newCenterFreq(m_CenterFreq);
+              }
             }
             else
             {
@@ -469,12 +472,14 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
         {   // moving inbetween demod lowcut and highcut region with left button held
             if (m_GrabPosition != 0)
             {
+              if (!m_Locked) {
                 m_DemodCenterFreq = roundFreq(freqFromX(pt.x() - m_GrabPosition),
                                               m_ClickResolution );
                 emit newDemodFreq(m_DemodCenterFreq,
                                   m_DemodCenterFreq - m_CenterFreq);
                 updateOverlay();
                 m_PeakHoldValid = false;
+              }
             }
             else
             {
@@ -658,6 +663,7 @@ void CPlotter::mousePressEvent(QMouseEvent * event)
         {
             if (event->buttons() == Qt::LeftButton)
             {
+              if (!m_Locked) {
                 int     best = -1;
 
                 if (m_PeakDetection > 0)
@@ -675,15 +681,18 @@ void CPlotter::mousePressEvent(QMouseEvent * event)
                 m_CursorCaptured = CENTER;
                 m_GrabPosition = 1;
                 drawOverlay();
+              }
             }
             else if (event->buttons() == Qt::MidButton)
             {
+              if (!m_Locked) {
                 // set center freq
                 m_CenterFreq = roundFreq(freqFromX(pt.x()), m_ClickResolution);
                 m_DemodCenterFreq = m_CenterFreq;
                 emit newCenterFreq(m_CenterFreq);
                 emit newDemodFreq(m_DemodCenterFreq, m_DemodCenterFreq - m_CenterFreq);
                 drawOverlay();
+              }
             }
             else if (event->buttons() == Qt::RightButton)
             {
@@ -708,6 +717,7 @@ void CPlotter::mousePressEvent(QMouseEvent * event)
         }
         else if (m_CursorCaptured == BOOKMARK)
         {
+          if (!m_Locked) {
             for (int i = 0; i < m_BookmarkTags.size(); i++)
             {
                 if (m_BookmarkTags[i].first.contains(event->pos()))
@@ -717,6 +727,7 @@ void CPlotter::mousePressEvent(QMouseEvent * event)
                     break;
                 }
             }
+          }
         }
     }
 }
@@ -828,18 +839,22 @@ void CPlotter::wheelEvent(QWheelEvent * event)
 
     else if (event->modifiers() & Qt::ShiftModifier)
     {
+      if (!m_Locked) {
         // filter shift
         m_DemodLowCutFreq += numSteps * m_ClickResolution;
         m_DemodHiCutFreq += numSteps * m_ClickResolution;
         clampDemodParameters();
         emit newFilterFreq(m_DemodLowCutFreq, m_DemodHiCutFreq);
+      }
     }
     else
     {
+      if (!m_Locked) {
         // inc/dec demod frequency
         m_DemodCenterFreq += (numSteps * m_ClickResolution);
         m_DemodCenterFreq = roundFreq(m_DemodCenterFreq, m_ClickResolution );
         emit newDemodFreq(m_DemodCenterFreq, m_DemodCenterFreq-m_CenterFreq);
+      }
     }
 
     updateOverlay();

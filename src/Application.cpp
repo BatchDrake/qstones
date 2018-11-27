@@ -64,6 +64,24 @@ Application::connectAll(void)
         SIGNAL(valueChanged(int)),
         this,
         SLOT(onIFFreqChanged(int)));
+
+  connect(
+        this->plotter,
+        SIGNAL(newCenterFreq(qint64)),
+        this,
+        SLOT(onPlotterNewTunerFreq(qint64)));
+
+  connect(
+        this->plotter,
+        SIGNAL(newDemodFreq(qint64, qint64)),
+        this,
+        SLOT(onPlotterNewIfFreq(qint64, qint64)));
+
+  connect(
+        this->ui->cbLockPandapter,
+        SIGNAL(stateChanged(int)),
+        this,
+        SLOT(onToggleLockPandapter(int)));
 }
 
 void
@@ -87,8 +105,7 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   // Add custom widgets
   this->plotter = new CPlotter(this);
   this->ui->verticalSplitter->insertWidget(0, this->plotter);
-  this->plotter->setSampleRate(44100); // Dummy sample rate
-  this->plotter->resetHorizontalZoom();
+  this->setSampleRate(44100); // Dummy sample rate
 
   // Setup UI state
   this->setUIState(HALTED);
@@ -96,6 +113,7 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   this->setTunerFrequency(this->prop.tunFreq);
   this->setIfFrequency(this->prop.ifFreq);
   this->setSpectrumWaterfallProportion(this->prop.swProp);
+  this->setPandapterLocked(this->prop.lockPandapter);
 }
 
 void
@@ -180,8 +198,19 @@ Application::stopCapture(void)
 }
 
 void
+Application::setSampleRate(SUSCOUNT rate)
+{
+  if (this->currSampleRate != rate) {
+    this->plotter->setSampleRate(rate);
+    this->plotter->resetHorizontalZoom();
+    this->currSampleRate = rate;
+  }
+}
+
+void
 Application::onPSDMessage(const Suscan::PSDMessage &msg)
 {
+  this->setSampleRate(msg.getSampleRate());
   this->plotter->setNewFftData((float *) msg.get(), (int) msg.size());
 }
 
@@ -190,6 +219,19 @@ Application::syncPlotter(void)
 {
   this->plotter->setCenterFreq(static_cast<quint64>(this->prop.tunFreq));
   this->plotter->setFilterOffset(static_cast<qint64>(this->prop.ifFreq));
+}
+
+void
+Application::setPandapterLocked(bool value, bool updateUi)
+{
+  this->prop.lockPandapter = value;
+  this->plotter->setLocked(value);
+
+  if (updateUi)
+    this->ui->cbLockPandapter->setCheckState(
+        value
+        ? Qt::Checked
+        : Qt::Unchecked);
 }
 
 void
@@ -264,9 +306,28 @@ Application::onIFFreqChanged(int freq)
 }
 
 void
+Application::onPlotterNewTunerFreq(qint64 freq)
+{
+  this->setTunerFrequency(freq);
+}
+
+void
+Application::onPlotterNewIfFreq(qint64 freq, qint64 delta)
+{
+  this->setTunerFrequency(freq - delta);
+  this->setIfFrequency(delta);
+}
+
+void
 Application::onSwPropChanged(int prop)
 {
   this->setSpectrumWaterfallProportion(static_cast<float>(prop) / 100.f, false);
+}
+
+void
+Application::onToggleLockPandapter(int state)
+{
+  this->setPandapterLocked(state == Qt::Checked, false);
 }
 
 Application::~Application()
