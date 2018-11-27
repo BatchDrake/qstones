@@ -117,6 +117,15 @@ Source::Config::label(void) const
   return suscan_source_config_get_label(this->instance);
 }
 
+SUFREQ
+Source::Config::getFreq(void) const
+{
+  if (this->instance == nullptr)
+    return 0;
+
+  return this->instance->freq;
+}
+
 ///////////////////////////////// Source Wrappers ////////////////////////////
 Source::Source(Config const& config)
 {

@@ -66,6 +66,7 @@ Application::setProfile(Suscan::Source::Config profile)
   this->currProfile = profile;
   this->setWindowTitle(
         QString::fromStdString("GRAVES echo detector - " + profile.label()));
+  this->setTunerFrequency(profile.getFreq());
 }
 
 Application::Application(QWidget *parent) : QMainWindow(parent)

@@ -51,7 +51,8 @@ namespace Suscan {
 
   public:
     std::string label(void) const;
-
+    SUFREQ getFreq(void) const;
+    
     Config& operator=(const Config &);
     Config& operator=(Config &&);
 
