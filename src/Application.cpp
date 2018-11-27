@@ -334,6 +334,6 @@ Application::~Application()
 {
   if (this->configDialog != nullptr)
     delete this->configDialog;
-
+  
   delete this->ui;
 }

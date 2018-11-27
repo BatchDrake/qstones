@@ -171,7 +171,9 @@ Analyzer::Analyzer(
 
 Analyzer::~Analyzer()
 {
-  if (this->instance != nullptr)
+  if (this->instance != nullptr) {
+    this->halt(); // Halt while thread is still running, so the thread can be aware of it
     suscan_analyzer_destroy(this->instance);
+  }
 }
 
