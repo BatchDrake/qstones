@@ -22,12 +22,16 @@
 
 #include <QMainWindow>
 #include <Gqrx/CPlotter.h>
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
 
 #include <ConfigDialog.h>
 #include <ui_mainui.h>
 
 #include <Suscan/Source.h>
 #include <Suscan/Analyzer.h>
+
+#include "EchoDetector.h"
 
 #define QSTONES_DEFAULT_TUNER_FREQ 143049000
 #define QSTONES_DEFAULT_IF_FREQ    1000
@@ -39,7 +43,32 @@
 #define QSTONES_FFT_WINDOW_SIZE    2048
 #define QSTONES_MAX_SAMPLE_RATE    100000
 
+QT_CHARTS_USE_NAMESPACE
+
 namespace QStones {
+  class Application;
+
+  class ChirpModel: public QAbstractTableModel {
+    Q_OBJECT
+
+  private:
+    std::vector<EchoDetector::Chirp> chirps;
+    Application &app;
+
+    static QString secsToTime(SUSCOUNT sec);
+
+  public:
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+
+    void pushChirp(const EchoDetector::Chirp &chirp);
+    const EchoDetector::Chirp &at(unsigned long index) const;
+
+    ChirpModel(QObject *parent, Application &app);
+  };
+
   struct ApplicationProperties {
     SUFREQ  tunFreq       = QSTONES_DEFAULT_TUNER_FREQ;
     SUFREQ  ifFreq        = QSTONES_DEFAULT_IF_FREQ;
@@ -63,6 +92,8 @@ namespace QStones {
     // Analyzer object
     Suscan::Source::Config currProfile;
     std::unique_ptr<Suscan::Analyzer> analyzer;
+    std::unique_ptr<EchoDetector> detector;
+
     State state;
     SUSCOUNT currSampleRate;
     struct ApplicationProperties prop;
@@ -72,14 +103,23 @@ namespace QStones {
     ConfigDialog *configDialog;
 
     // Custom widgets
+    ChirpModel *chirpModel;
     CPlotter *plotter; // Deleted by parent
+    QChart *chirpChart;
+    QChart *dopplerChart;
+    QChartView *chirpView;
+    QChartView *dopplerView;
 
     void setProfile(Suscan::Source::Config);
     void connectAll(void);
     void setUIState(State state);
     void connectAnalyzer(void);
+    void connectDetector(void);
     void syncPlotter(void);
     void setSampleRate(SUSCOUNT rate);
+    void updateChirpCharts(const EchoDetector::Chirp &);
+
+    friend class ChirpModel;
 
   public:
     void run(void);
@@ -106,6 +146,8 @@ namespace QStones {
     void onPlotterNewTunerFreq(qint64 freq);
     void onPlotterNewIfFreq(qint64 freq, qint64 delta);
     void onToggleLockPandapter(int state);
+    void onChirp(const QStones::EchoDetector::Chirp &);
+    void onChirpSelected(const QItemSelection &, const QItemSelection &);
   };
 };
 

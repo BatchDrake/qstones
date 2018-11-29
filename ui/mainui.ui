@@ -39,48 +39,17 @@
         </property>
         <widget class="QSplitter" name="splitter">
          <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
+          <enum>Qt::RightToLeft</enum>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <widget class="QTableWidget" name="eventTable">
-          <attribute name="horizontalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
-          <attribute name="horizontalHeaderCascadingSectionResizes">
-           <bool>false</bool>
-          </attribute>
-          <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-           <bool>false</bool>
-          </attribute>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>true</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Time</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Duration</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Mean Doppler</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>SNR</string>
-           </property>
-          </column>
-         </widget>
          <widget class="QTabWidget" name="tabWidget">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab">
            <attribute name="title">
@@ -121,12 +90,119 @@
            <attribute name="title">
             <string>Chirp (I/Q)</string>
            </attribute>
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0" colspan="3">
+             <widget class="QFrame" name="chirpFrame">
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Raised</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pushButton">
+              <property name="text">
+               <string>Save chirp</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normalon>:/themes/oxygen/16x16/actions/document-save-as.png</normalon>
+               </iconset>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="pushButton_2">
+              <property name="text">
+               <string>Save plot</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normalon>:/themes/oxygen/16x16/mimetypes/image-x-generic.png</normalon>
+               </iconset>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="tab_3">
            <attribute name="title">
             <string>Doppler</string>
            </attribute>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pushButton_3">
+              <property name="text">
+               <string>Save data</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normalon>:/themes/oxygen/16x16/actions/document-save-as.png</normalon>
+               </iconset>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QPushButton" name="pushButton_4">
+              <property name="text">
+               <string>Save plot</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normalon>:/themes/oxygen/16x16/mimetypes/image-x-generic.png</normalon>
+               </iconset>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="3">
+             <widget class="QFrame" name="dopplerFrame">
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Raised</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
+         </widget>
+         <widget class="QTableView" name="eventTable">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="cornerButtonEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderCascadingSectionResizes">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderDefaultSectionSize">
+           <number>18</number>
+          </attribute>
+          <attribute name="verticalHeaderMinimumSectionSize">
+           <number>18</number>
+          </attribute>
+          <attribute name="verticalHeaderStretchLastSection">
+           <bool>false</bool>
+          </attribute>
          </widget>
         </widget>
        </widget>
@@ -161,26 +237,6 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QCheckBox" name="checkBox">
-           <property name="text">
-            <string>Peak hold</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QCheckBox" name="cbLockPandapter">
-           <property name="text">
-            <string>Lock pandapter</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-           <property name="tristate">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_6">
            <property name="text">
@@ -204,6 +260,26 @@
            </property>
            <property name="tickPosition">
             <enum>QSlider::TicksBelow</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QCheckBox" name="checkBox">
+           <property name="text">
+            <string>Peak hold</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QCheckBox" name="cbLockPandapter">
+           <property name="text">
+            <string>Lock pandapter</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <property name="tristate">
+            <bool>false</bool>
            </property>
           </widget>
          </item>

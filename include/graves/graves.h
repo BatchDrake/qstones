@@ -32,8 +32,8 @@ extern "C" {
 #include <sigutils/log.h>
 #include <sigutils/sampling.h>
 
-#define GRAVES_CENTER_FREQ 143050000.
-#define SPEED_OF_LIGHT     3e8
+#define GRAVES_CENTER_FREQ SU_ADDSFX(143050000.)
+#define SPEED_OF_LIGHT     SU_ADDSFX(3e8)
 
 #define LPF1_CUTOFF SU_ADDSFX(300.) /* In Hz */
 #define LPF2_CUTOFF SU_ADDSFX(50.)  /* In Hz */

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -44,7 +44,8 @@ SOURCES += \
     src/Gqrx/CPlotter.cpp \
     src/Suscan/Messages/GenericMessage.cpp \
     src/graves/graves.c \
-    src/EchoDetector.cpp
+    src/EchoDetector.cpp \
+    src/ChirpModel.cpp
 
 HEADERS += \
     include/Suscan/Analyzer.h \

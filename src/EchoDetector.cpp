@@ -21,7 +21,48 @@
 
 #include "EchoDetector.h"
 
+Q_DECLARE_METATYPE(QStones::EchoDetector::Chirp);
+
 using namespace QStones;
+
+// Chirp processing
+void
+EchoDetector::Chirp::process(SUSCOUNT fs)
+{
+  unsigned long i, len;
+  SUCOMPLEX prev = 0;
+  SUFLOAT offset, this_doppler;
+  SUFLOAT doppler_sum = 0;
+  SUFLOAT E = 0;
+  SUFLOAT A2;
+
+  len = this->samples.size();
+  this->doppler.resize(len);
+
+  for (i = 0; i < len; ++i) {
+    // Compute square of the amplitude
+    A2 = SU_C_REAL(this->samples[i] * SU_C_CONJ(this->samples[i]));
+    E += A2; // Energy integration
+
+    // Get immediate offset
+    offset = SU_C_ARG(this->samples[i] * SU_C_CONJ(prev))
+        / (2 * SU_ADDSFX(M_PI)) * fs;
+
+    // Compute Doppler shift
+    this_doppler = SU_ADDSFX(.5) * SPEED_OF_LIGHT * offset / GRAVES_CENTER_FREQ;
+
+    doppler_sum += A2 * this_doppler; // Weight by A2
+    doppler[i] = this_doppler;
+
+    prev = this->samples[i];
+  }
+
+  this->SNR = SU_POWER_DB_RAW(E / (GRAVES_POWER_RATIO * len * N0));
+  this->mean_doppler = doppler_sum / E;
+  this->duration = len / fs;
+
+  this->processed = true;
+}
 
 EchoDetector::Chirp::Chirp(void) { } // Dumb constructor
 
@@ -39,6 +80,14 @@ EchoDetector::Chirp::Chirp(const Chirp &prev)
   this->start = prev.start;
   this->N0 = prev.N0;
   this->samples = prev.samples;
+
+  this->processed = prev.processed;
+  if (this->processed) {
+    this->SNR = prev.SNR;
+    this->mean_doppler = prev.mean_doppler;
+    this->duration = prev.duration;
+    this->doppler = prev.doppler;
+  }
 }
 
 // Move constructor
@@ -47,6 +96,14 @@ EchoDetector::Chirp::Chirp(Chirp &&prev)
   this->start = prev.start;
   this->N0 = prev.N0;
   this->samples = std::move(prev.samples);
+
+  this->processed = prev.processed;
+  if (this->processed) {
+    this->SNR = prev.SNR;
+    this->mean_doppler = prev.mean_doppler;
+    this->duration = prev.duration;
+    this->doppler = std::move(prev.doppler);
+  }
 }
 
 // Copy assign
@@ -56,6 +113,14 @@ EchoDetector::Chirp::operator=(const Chirp &rhs)
   this->start = rhs.start;
   this->N0 = rhs.N0;
   this->samples = rhs.samples;
+
+  this->processed = rhs.processed;
+  if (this->processed) {
+    this->SNR = rhs.SNR;
+    this->mean_doppler = rhs.mean_doppler;
+    this->duration = rhs.duration;
+    this->doppler = rhs.doppler;
+  }
 
   return *this;
 }
@@ -68,10 +133,28 @@ EchoDetector::Chirp::operator=(Chirp &&rhs)
   this->N0 = rhs.N0;
   this->samples = std::move(rhs.samples);
 
+  this->processed = rhs.processed;
+  if (this->processed) {
+    this->SNR = rhs.SNR;
+    this->mean_doppler = rhs.mean_doppler;
+    this->duration = rhs.duration;
+    this->doppler = std::move(rhs.doppler);
+  }
+
   return *this;
 }
 
 /////////////////////////// EchoDetector implementation //////////////////////
+bool EchoDetector::registered = false;
+
+void
+EchoDetector::assertTypeRegistration(void)
+{
+  if (!EchoDetector::registered) {
+    qRegisterMetaType<QStones::EchoDetector::Chirp>();
+    EchoDetector::registered = true;
+  }
+}
 
 SUBOOL
 OnChirpFunc(void *privdata,
@@ -92,6 +175,8 @@ EchoDetector::EchoDetector(QObject *parent, SUFLOAT fs, SUFLOAT fc) :
   QObject(parent), instance(nullptr, graves_det_destroy)
 {
   graves_det_t *ptr;
+
+  assertTypeRegistration();
 
   SU_ATTEMPT(ptr = graves_det_new(fs, fc, OnChirpFunc, this));
 

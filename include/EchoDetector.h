@@ -31,7 +31,10 @@ namespace QStones {
   class EchoDetector: public QObject {
     Q_OBJECT
 
+  private:
     std::unique_ptr<graves_det_t, void (*)(graves_det_t *)> instance;
+    static bool registered;
+    void assertTypeRegistration(void);
 
   public:
     struct Chirp;
@@ -41,13 +44,24 @@ namespace QStones {
     EchoDetector(QObject *, SUFLOAT, SUFLOAT);
 
   signals:
-    void new_chirp(const Chirp &);
+    void new_chirp(const QStones::EchoDetector::Chirp &);
   };
 
+  // TODO: ADD SAMPLE RATE!!!!
   struct EchoDetector::Chirp {
     SUSCOUNT start;
     SUFLOAT N0;
     std::vector<SUCOMPLEX> samples;
+
+    // Processed members
+    bool processed = false;
+    SUFLOAT SNR = 0;
+    SUFLOAT mean_doppler = 0;
+    SUFLOAT duration = 0;
+    std::vector<SUFLOAT> doppler;
+
+    // Methods
+    void process(SUSCOUNT fs);
 
     // Constructors
     Chirp(SUSCOUNT start, const SUCOMPLEX *data, SUSCOUNT len, SUFLOAT N0);
