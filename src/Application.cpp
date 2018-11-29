@@ -95,7 +95,8 @@ Application::setProfile(Suscan::Source::Config profile)
 {
   this->currProfile = profile;
   this->setWindowTitle(
-        QString::fromStdString("GRAVES echo detector - " + profile.label()));
+        QString::fromStdString(
+          "QStones - " + profile.label() + " - " + std::to_string(profile.getSampleRate())));
 
   this->plotter->setSampleRate(profile.getSampleRate());
   this->setTunerFrequency(profile.getFreq());
@@ -160,8 +161,8 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
   this->dopplerChart->createDefaultAxes();
   this->dopplerChart->axisX()->setTitleText("Time (s)");
   this->dopplerChart->axisY()->setTitleText("Relative speed (m/s)");
-  this->dopplerChart->axisY()->setMin(-SU_ABS(chirp.mean_doppler));
-  this->dopplerChart->axisY()->setMax(SU_ABS(chirp.mean_doppler));
+  this->dopplerChart->axisY()->setMin(-SU_ABS(2 * chirp.mean_doppler));
+  this->dopplerChart->axisY()->setMax(SU_ABS(2 * chirp.mean_doppler));
 
 }
 

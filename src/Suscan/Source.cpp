@@ -153,6 +153,42 @@ Source::Config::setSampleRate(unsigned int rate)
   suscan_source_config_set_samp_rate(this->instance, rate);
 }
 
+void
+Source::Config::setPath(const std::string &path)
+{
+  if (this->instance == nullptr)
+    return;
+
+  SU_ATTEMPT(
+        suscan_source_config_set_path(
+          this->instance,
+          path.c_str()));
+}
+
+void
+Source::Config::setLabel(const std::string &path)
+{
+  if (this->instance == nullptr)
+    return;
+
+  SU_ATTEMPT(
+        suscan_source_config_set_label(
+          this->instance,
+          path.c_str()));
+}
+
+void
+Source::Config::setSDRDevice(const suscan_source_device_t *dev)
+{
+  if (this->instance == nullptr)
+    return;
+
+  SU_ATTEMPT(
+        suscan_source_config_set_device(
+          this->instance,
+          dev));
+}
+
 ///////////////////////////////// Source Wrappers ////////////////////////////
 Source::Source(Config const& config)
 {

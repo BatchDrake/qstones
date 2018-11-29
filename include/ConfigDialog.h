@@ -29,17 +29,27 @@ namespace QStones {
   {
     Q_OBJECT
 
-  public:
-    Suscan::Source::Config getProfile(void);
-
-    explicit ConfigDialog(QWidget *parent = nullptr);
-    ~ConfigDialog();
-
   private:
+    Suscan::Source::Config audioProfile;
+    Suscan::Source::Config wavProfile;
+    Suscan::Source::Config iqProfile;
+    bool audio_detected = false;
+
     Ui_Config *ui;
 
     void connectAll(void);
     void populateProfiles(void);
+
+  public:
+    Suscan::Source::Config getProfile(void);
+    void setAudioDevice(const suscan_source_device_t *);
+    explicit ConfigDialog(QWidget *parent = nullptr);
+    ~ConfigDialog();
+
+  public slots:
+    void onRadioButtonToggle(bool);
+    void onBrowseWavClicked(void);
+    void onBrowseIqClicked(void);
   };
 };
 

@@ -55,6 +55,9 @@ namespace Suscan {
     unsigned int getSampleRate() const;
     enum suscan_source_type getType(void) const;
 
+    void setLabel(const std::string &);
+    void setPath(const std::string &);
+    void setSDRDevice(const suscan_source_device_t *);
     void setSampleRate(unsigned int value);
 
     Config& operator=(const Config &);

@@ -16,7 +16,10 @@
 //    License along with this program.  If not, see
 //    <http://www.gnu.org/licenses/>
 //
-#include <iostream>
+
+#include <QFileDialog>
+#include <QMessageBox>
+
 #include <Suscan/Library.h>
 
 #include "ConfigDialog.h"
@@ -39,15 +42,83 @@ ConfigDialog::populateProfiles(void)
 void
 ConfigDialog::connectAll(void)
 {
-  // Stub
+  connect(
+        this->ui->rbAudio,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(onRadioButtonToggle(bool)));
+
+  connect(
+        this->ui->rbIq,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(onRadioButtonToggle(bool)));
+
+  connect(
+        this->ui->rbWav,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(onRadioButtonToggle(bool)));
+
+  connect(
+        this->ui->rbSuscan,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(onRadioButtonToggle(bool)));
+
+  connect(
+        this->ui->pbBrowseIq,
+        SIGNAL(clicked()),
+        this,
+        SLOT(onBrowseIqClicked(void)));
+
+  connect(
+        this->ui->pbBrowseWav,
+        SIGNAL(clicked()),
+        this,
+        SLOT(onBrowseWavClicked(void)));
 }
 
 Suscan::Source::Config
 ConfigDialog::getProfile(void)
 {
-  QVariant data = this->ui->profileCombo->itemData(this->ui->profileCombo->currentIndex());
+  if (this->ui->rbAudio->isChecked()) {
+    this->audioProfile.setSampleRate(this->ui->leAudioSampRate->text().toUInt());
+    return this->audioProfile;
+  } else if (this->ui->rbIq->isChecked()) {
+    this->iqProfile.setSampleRate(this->ui->leIqSampRate->text().toUInt());
+    return this->iqProfile;
+  } else if (this->ui->rbWav->isChecked()) {
+    return this->wavProfile;
+  } else {
+    QVariant data = this->ui->profileCombo->itemData(this->ui->profileCombo->currentIndex());
+    return data.value<Suscan::Source::Config>();
+  }
+}
 
-  return data.value<Suscan::Source::Config>();
+void
+ConfigDialog::setAudioDevice(const suscan_source_device_t *dev)
+{
+  this->audioProfile.setSDRDevice(dev);
+  this->audio_detected = true;
+}
+
+SUPRIVATE SUBOOL
+find_audio_device(
+    const suscan_source_device_t *dev,
+    unsigned int,
+    void *privdata)
+{
+  ConfigDialog *dialog = static_cast<ConfigDialog *>(privdata);
+  const char *devstr;
+
+  devstr = SoapySDRKwargs_get(dev->args, "driver");
+  if (devstr != nullptr && strcmp(devstr, "audio") == 0) {
+    dialog->setAudioDevice(dev);
+    return SU_FALSE;
+  }
+
+  return SU_TRUE;
 }
 
 ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
@@ -55,13 +126,95 @@ ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
   this->ui = new Ui_Config();
   this->ui->setupUi(this);
 
+  // Detect audio
+  suscan_source_device_walk(find_audio_device, this);
+  if (!this->audio_detected) {
+    QMessageBox::warning(
+          this,
+          "No suitable audio device found",
+          "Failed to detect soundcard device via SoapySDR. "
+          "Live audio capture will be disabled.",
+          QMessageBox::Ok);
+    this->ui->rbAudio->setEnabled(false);
+    this->ui->rbWav->setChecked(true);
+  }
+
+  // Setup integer validators
+  this->ui->leAudioDevice->setValidator(new QIntValidator(0, 100, this));
+  this->ui->leAudioSampRate->setValidator(new QIntValidator(1, 100000, this));
+  this->ui->leIqSampRate->setValidator(new QIntValidator(1, 1000000, this));
+
+  this->audioProfile = Suscan::Source::Config(
+        SUSCAN_SOURCE_TYPE_SDR,
+        SUSCAN_SOURCE_FORMAT_AUTO);
+  this->audioProfile.setLabel("Soundcard");
+
+  this->wavProfile = Suscan::Source::Config(
+        SUSCAN_SOURCE_TYPE_FILE,
+        SUSCAN_SOURCE_FORMAT_WAV);
+  this->wavProfile.setLabel("WAV file");
+
+  this->iqProfile = Suscan::Source::Config(
+        SUSCAN_SOURCE_TYPE_FILE,
+        SUSCAN_SOURCE_FORMAT_RAW);
+  this->iqProfile.setLabel("I/Q file");
+
   this->setWindowTitle("Signal source configuration");
 
   // Populate this dialog with profiles
   this->populateProfiles();
+  this->connectAll();
+
+  // Act as something was clicked
+  this->onRadioButtonToggle(false);
+}
+
+void
+ConfigDialog::onRadioButtonToggle(bool)
+{
+  this->ui->leAudioSampRate->setEnabled(this->ui->rbAudio->isChecked());
+  this->ui->leAudioDevice->setEnabled(false);
+
+  this->ui->pbBrowseWav->setEnabled(this->ui->rbWav->isChecked());
+
+  this->ui->pbBrowseIq->setEnabled(this->ui->rbIq->isChecked());
+  this->ui->leIqSampRate->setEnabled(this->ui->rbIq->isChecked());
+
+  this->ui->profileCombo->setEnabled(this->ui->rbSuscan->isChecked());
+}
+
+void
+ConfigDialog::onBrowseIqClicked(void)
+{
+  QString path = QFileDialog::getOpenFileName(
+        this,
+        "Open I/Q file",
+        QString(),
+        "IQ files (*.raw);;All files (*)");
+
+  if (!path.isEmpty()) {
+    this->ui->lIqPath->setText(path);
+    this->iqProfile.setPath(path.toStdString());
+  }
+}
+
+void
+ConfigDialog::onBrowseWavClicked(void)
+{
+  QString path = QFileDialog::getOpenFileName(
+        this,
+        "Open WAV file",
+        QString(),
+        "WAV files (*.wav);;All files (*)");
+
+  if (!path.isEmpty()) {
+    this->ui->lWavPath->setText(path);
+    this->wavProfile.setPath(path.toStdString());
+  }
 }
 
 ConfigDialog::~ConfigDialog()
 {
     delete this->ui;
 }
+
