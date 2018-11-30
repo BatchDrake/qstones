@@ -101,6 +101,18 @@ Application::connectAll(void)
         SLOT(onSwPropChanged(int)));
 
   connect(
+        this->ui->sRange,
+        SIGNAL(valueChanged(int)),
+        this,
+        SLOT(onSwPropChanged(int)));
+
+  connect(
+        this->ui->sFloor,
+        SIGNAL(valueChanged(int)),
+        this,
+        SLOT(onSwPropChanged(int)));
+
+  connect(
         this->ui->sbIFFreq,
         SIGNAL(valueChanged(int)),
         this,
@@ -123,6 +135,12 @@ Application::connectAll(void)
         SIGNAL(stateChanged(int)),
         this,
         SLOT(onToggleLockPandapter(int)));
+
+  connect(
+        this->ui->cbPeakHold,
+        SIGNAL(stateChanged(int)),
+        this,
+        SLOT(onTogglePeakHold(int)));
 
   connect(
         this->ui->eventTable->selectionModel(),
@@ -256,6 +274,8 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   this->setIfFrequency(this->prop.ifFreq);
   this->setSpectrumWaterfallProportion(this->prop.swProp);
   this->setPandapterLocked(this->prop.lockPandapter);
+  this->setSpectrumMinDb(this->prop.minDb);
+  this->setSpectrumMaxDb(this->prop.maxDb);
 }
 
 void
@@ -480,6 +500,19 @@ Application::setPandapterLocked(bool value, bool updateUi)
 }
 
 void
+Application::setPeakHold(bool value, bool updateUi)
+{
+  this->prop.lockPandapter = value;
+  this->plotter->setPeakHold(value);
+
+  if (updateUi)
+    this->ui->cbPeakHold->setCheckState(
+        value
+        ? Qt::Checked
+        : Qt::Unchecked);
+}
+
+void
 Application::setTunerFrequency(SUFREQ freq, bool updateUi)
 {
   this->prop.tunFreq = freq;
@@ -502,6 +535,28 @@ Application::setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi)
 
   if (updateUi)
     this->ui->sWRatio->setValue(static_cast<int>(prop * 100));
+}
+
+void
+Application::setSpectrumMinDb(int min, bool updateUi)
+{
+  this->prop.minDb = min;
+
+  this->plotter->setFftRange(this->prop.minDb, this->prop.maxDb);
+
+  if (updateUi)
+    this->ui->sFloor->setValue(min);
+}
+
+void
+Application::setSpectrumMaxDb(int max, bool updateUi)
+{
+  this->prop.maxDb = max;
+
+  this->plotter->setFftRange(this->prop.minDb, this->prop.maxDb);
+
+  if (updateUi)
+    this->ui->sRange->setValue(this->prop.maxDb - this->prop.minDb);
 }
 
 void
@@ -563,11 +618,21 @@ Application::onPlotterNewIfFreq(qint64 freq, qint64 delta)
   this->setIfFrequency(delta);
 }
 
+// TODO: GROUP ALL
 void
-Application::onSwPropChanged(int prop)
+Application::onSwPropChanged(int)
 {
   this->setSpectrumWaterfallProportion(
-        static_cast<float>(prop) / 100.f,
+        static_cast<float>(this->ui->sWRatio->value()) / 100.f,
+        false);
+
+  this->setSpectrumMinDb(
+        this->ui->sFloor->value(),
+        false);
+
+  this->setSpectrumMaxDb(
+        this->ui->sFloor->value()
+        + this->ui->sRange->value(),
         false);
 }
 
@@ -575,6 +640,12 @@ void
 Application::onToggleLockPandapter(int state)
 {
   this->setPandapterLocked(state == Qt::Checked, false);
+}
+
+void
+Application::onTogglePeakHold(int state)
+{
+  this->setPeakHold(state == Qt::Checked, false);
 }
 
 void

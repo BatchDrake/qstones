@@ -39,7 +39,8 @@
 #define QSTONES_DEFAULT_LOCK       true
 #define QSTONES_DEFAULT_WF_PROP    SU_ADDSFX(.5)
 #define QSTONES_DEFAULT_SNR_BW     SU_ADDSFX(.16)
-
+#define QSTONES_DEFAULT_MIN_DB     -140
+#define QSTONES_DEFAULT_MAX_DB     0
 #define QSTONES_FFT_WINDOW_SIZE    2048
 #define QSTONES_MAX_SAMPLE_RATE    100000
 
@@ -76,6 +77,8 @@ namespace QStones {
     bool    lockPandapter = QSTONES_DEFAULT_LOCK;
     SUFLOAT snrBw         = QSTONES_DEFAULT_SNR_BW;
     SUFLOAT swProp        = QSTONES_DEFAULT_WF_PROP;
+    int     minDb         = QSTONES_DEFAULT_MIN_DB;
+    int     maxDb         = QSTONES_DEFAULT_MAX_DB;
   };
 
   class Application : public QMainWindow
@@ -130,9 +133,12 @@ namespace QStones {
     void stopCapture(void);
 
     void setPandapterLocked(bool value, bool updateUi = true);
+    void setPeakHold(bool value, bool updateUi = true);
     void setTunerFrequency(SUFREQ freq, bool updateUi = true);
     void setIfFrequency(SUFREQ freq, bool updateUi = true);
     void setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi = true);
+    void setSpectrumMinDb(int min, bool updateUi = true);
+    void setSpectrumMaxDb(int max, bool updateUi = true);
 
     explicit Application(QWidget *parent = nullptr);
     ~Application();
@@ -151,6 +157,7 @@ namespace QStones {
     void onPlotterNewTunerFreq(qint64 freq);
     void onPlotterNewIfFreq(qint64 freq, qint64 delta);
     void onToggleLockPandapter(int state);
+    void onTogglePeakHold(int state);
     void onChirp(const QStones::EchoDetector::Chirp &);
     void onChirpSelected(const QItemSelection &, const QItemSelection &);
   };
