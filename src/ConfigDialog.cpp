@@ -110,12 +110,14 @@ find_audio_device(
     void *privdata)
 {
   ConfigDialog *dialog = static_cast<ConfigDialog *>(privdata);
-  const char *devstr;
+  const char *devstr = SoapySDRKwargs_get(dev->args, "driver");
 
-  devstr = SoapySDRKwargs_get(dev->args, "driver");
   if (devstr != nullptr && strcmp(devstr, "audio") == 0) {
-    dialog->setAudioDevice(dev);
-    return SU_FALSE;
+    const char *label = SoapySDRKwargs_get(dev->args, "label");
+    if (strcmp(label, "default") == 0) {
+      dialog->setAudioDevice(dev);
+      return SU_FALSE;
+    }
   }
 
   return SU_TRUE;
@@ -126,7 +128,16 @@ ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
   this->ui = new Ui_Config();
   this->ui->setupUi(this);
 
-  // Detect audio
+  // Setup integer validators
+  this->ui->leAudioDevice->setValidator(new QIntValidator(0, 100, this));
+  this->ui->leAudioSampRate->setValidator(new QIntValidator(1, 100000, this));
+  this->ui->leIqSampRate->setValidator(new QIntValidator(1, 1000000, this));
+
+  // Setup audio profile
+  this->audioProfile = Suscan::Source::Config(
+        SUSCAN_SOURCE_TYPE_SDR,
+        SUSCAN_SOURCE_FORMAT_AUTO);
+  this->audioProfile.setLabel("Soundcard");
   suscan_source_device_walk(find_audio_device, this);
   if (!this->audio_detected) {
     QMessageBox::warning(
@@ -138,16 +149,6 @@ ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
     this->ui->rbAudio->setEnabled(false);
     this->ui->rbWav->setChecked(true);
   }
-
-  // Setup integer validators
-  this->ui->leAudioDevice->setValidator(new QIntValidator(0, 100, this));
-  this->ui->leAudioSampRate->setValidator(new QIntValidator(1, 100000, this));
-  this->ui->leIqSampRate->setValidator(new QIntValidator(1, 1000000, this));
-
-  this->audioProfile = Suscan::Source::Config(
-        SUSCAN_SOURCE_TYPE_SDR,
-        SUSCAN_SOURCE_FORMAT_AUTO);
-  this->audioProfile.setLabel("Soundcard");
 
   this->wavProfile = Suscan::Source::Config(
         SUSCAN_SOURCE_TYPE_FILE,

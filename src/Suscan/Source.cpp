@@ -34,13 +34,14 @@ Source::Config::Config(
     enum suscan_source_format fmt)
 {
   SU_ATTEMPT(this->instance = suscan_source_config_new(type, fmt));
+
   this->borrowed = false;
 }
 
 Source::Config::Config(Config const &prev)
 {
   if (prev.borrowed) {
-    this->instance = suscan_source_config_clone(prev.instance);
+    this->instance = prev.instance;
   } else {
     SU_ATTEMPT(this->instance = suscan_source_config_clone(prev.instance));
   }
@@ -48,12 +49,10 @@ Source::Config::Config(Config const &prev)
   this->borrowed = prev.borrowed;
 }
 
-Source::Config::Config(Config &&rv)
+Source::Config::Config(Config &&rv) : Config()
 {
-  this->instance = rv.instance;
-  this->borrowed = rv.borrowed;
-
-  rv.instance = nullptr;
+  std::swap(this->instance, rv.instance);
+  std::swap(this->borrowed, rv.borrowed);
 }
 
 Source::Config::Config(suscan_source_config_t *config)
@@ -94,14 +93,8 @@ Source::Config::operator=(Config &&rv)
 {
   // This is what the Cobol of the 2020s looks like
   if (this != &rv) {
-    if (this->instance != nullptr && !this->borrowed)
-      suscan_source_config_destroy(this->instance);
-
-    this->instance = rv.instance;
-    this->borrowed = rv.borrowed;
-
-    rv.instance = nullptr;
-    rv.borrowed = true;
+    std::swap(this->instance, rv.instance);
+    std::swap(this->borrowed, rv.borrowed);
   }
 
   return *this;

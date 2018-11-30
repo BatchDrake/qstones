@@ -42,7 +42,6 @@ namespace Suscan {
 
   class Source::Config {
   private:
-    suscan_source_config_t *instance;
     bool borrowed;
 
     // Convenience friendship
@@ -50,6 +49,7 @@ namespace Suscan {
     friend class Source;
 
   public:
+    suscan_source_config_t *instance;
     std::string label(void) const;
     SUFREQ getFreq(void) const;
     unsigned int getSampleRate() const;
