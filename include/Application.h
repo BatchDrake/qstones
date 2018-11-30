@@ -139,6 +139,8 @@ namespace QStones {
     void onTriggerCapture(bool);
     void onTriggerStop(bool);
     void onAnalyzerHalted(void);
+    void onAnalyzerReadError(void);
+    void onAnalyzerEos(void);
     void onPSDMessage(const Suscan::PSDMessage &message);
     void onFreqChanged(int);
     void onIFFreqChanged(int);

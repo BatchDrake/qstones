@@ -248,8 +248,45 @@ Application::onAnalyzerHalted(void)
 }
 
 void
+Application::onAnalyzerEos(void)
+{
+  this->setUIState(HALTED);
+  this->analyzer = nullptr;
+}
+
+void
+Application::onAnalyzerReadError(void)
+{
+  (void)  QMessageBox::critical(
+        this,
+        "Source error",
+        QString::fromStdString("Capture stopped due to source read error"),
+        QMessageBox::Ok);
+  this->setUIState(HALTED);
+  this->analyzer = nullptr;
+}
+
+void
 Application::connectAnalyzer(void)
 {
+  connect(
+        this->analyzer.get(),
+        SIGNAL(halted(void)),
+        this,
+        SLOT(onAnalyzerHalted(void)));
+
+  connect(
+        this->analyzer.get(),
+        SIGNAL(eos(void)),
+        this,
+        SLOT(onAnalyzerEos(void)));
+
+  connect(
+        this->analyzer.get(),
+        SIGNAL(read_error(void)),
+        this,
+        SLOT(onAnalyzerReadError(void)));
+
   connect(
         this->analyzer.get(),
         SIGNAL(halted(void)),
