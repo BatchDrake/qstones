@@ -45,7 +45,8 @@ SOURCES += \
     src/Suscan/Messages/GenericMessage.cpp \
     src/graves/graves.c \
     src/EchoDetector.cpp \
-    src/ChirpModel.cpp
+    src/ChirpModel.cpp \
+    src/Suscan/Logger.cpp
 
 HEADERS += \
     include/Suscan/Analyzer.h \
@@ -64,7 +65,8 @@ HEADERS += \
     include/Gqrx/CPlotter.h \
     include/Suscan/Messages/GenericMessage.h \
     include/graves/graves.h \
-    include/EchoDetector.h
+    include/EchoDetector.h \
+    include/Suscan/Logger.h
 
 FORMS += \
     ui/config.ui \

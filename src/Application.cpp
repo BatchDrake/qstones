@@ -27,6 +27,47 @@
 using namespace QStones;
 
 void
+Application::flushLog(void)
+{
+  Suscan::Logger::getInstance()->flush();
+}
+
+QString
+Application::getLogText(void)
+{
+  QString text = "";
+  std::lock_guard<Suscan::Logger> guard(*Suscan::Logger::getInstance());
+
+  for (const auto &p : *Suscan::Logger::getInstance()) {
+    switch (p.severity) {
+      case SU_LOG_SEVERITY_CRITICAL:
+        text += "critical: ";
+        break;
+
+      case SU_LOG_SEVERITY_DEBUG:
+        text += "debug: ";
+        break;
+
+      case SU_LOG_SEVERITY_ERROR:
+        text += "error: ";
+        break;
+
+      case SU_LOG_SEVERITY_INFO:
+        text += "info: ";
+        break;
+
+      case SU_LOG_SEVERITY_WARNING:
+        text += "warning: ";
+        break;
+    }
+
+    text += p.message.c_str();
+  }
+
+  return text;
+}
+
+void
 Application::connectAll(void)
 {
   connect(
@@ -260,7 +301,9 @@ Application::onAnalyzerReadError(void)
   (void)  QMessageBox::critical(
         this,
         "Source error",
-        QString::fromStdString("Capture stopped due to source read error"),
+        "Capture stopped due to source read error. Last errors were:<p /><pre>"
+        + getLogText()
+        + "</pre>",
         QMessageBox::Ok);
   this->setUIState(HALTED);
   this->analyzer = nullptr;
@@ -355,26 +398,35 @@ Application::startCapture(void)
           return;
       }
 
-      this->analyzer = std::make_unique<Suscan::Analyzer>(default_params, this->currProfile);
+      // Flush log messages from here
+      flushLog();
+
+      this->analyzer = std::make_unique<Suscan::Analyzer>(
+            default_params,
+            this->currProfile);
+
       this->detector = std::make_unique<EchoDetector>(
             this,
             this->currProfile.getSampleRate(),
             this->prop.ifFreq);
 
       // Add baseband filter to feed echo detector
-      this->analyzer.get()->registerBaseBandFilter(onBaseBandData, this->detector.get());
+      this->analyzer.get()->registerBaseBandFilter(
+            onBaseBandData,
+            this->detector.get());
 
       this->connectDetector();
       this->connectAnalyzer();
 
       this->setUIState(RUNNING);
     }
-  } catch (Suscan::Exception &e) {
+  } catch (Suscan::Exception &) {
     (void)  QMessageBox::critical(
           this,
           "QStones error",
-          QString::fromStdString("Failed to create analyzer object. Error was:\n\n"
-            + std::string(e.what())),
+          "Failed to create analyzer object. Errors were:<p /><pre>"
+          + getLogText()
+          + "</pre>",
           QMessageBox::Ok);
   }
 }

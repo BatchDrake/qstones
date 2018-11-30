@@ -24,6 +24,7 @@
 
 #include <Suscan/Compat.h>
 #include <Suscan/Source.h>
+#include <Suscan/Logger.h>
 
 #include <codec/codec.h>
 #include <analyzer/source.h>
@@ -35,6 +36,7 @@ namespace Suscan {
   class Singleton {
   private:
     static Singleton *instance;
+    static Logger *logger;
 
     std::vector<Source::Config> profiles;
 

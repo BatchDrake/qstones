@@ -23,6 +23,7 @@ using namespace Suscan;
 
 // Singleton initialization
 Singleton *Singleton::instance = nullptr;
+Logger    *Singleton::logger   = nullptr;
 
 Singleton::Singleton()
 {
@@ -31,6 +32,8 @@ Singleton::Singleton()
   this->estimators_initd = false;
   this->spectrum_sources_initd = false;
   this->inspectors_initd = false;
+
+  this->logger = Logger::getInstance();
 }
 
 Singleton::~Singleton()

@@ -122,6 +122,8 @@ namespace QStones {
     friend class ChirpModel;
 
   public:
+    static void flushLog(void);
+    static QString getLogText(void);
     void run(void);
 
     void startCapture(void);
@@ -131,6 +133,7 @@ namespace QStones {
     void setTunerFrequency(SUFREQ freq, bool updateUi = true);
     void setIfFrequency(SUFREQ freq, bool updateUi = true);
     void setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi = true);
+
     explicit Application(QWidget *parent = nullptr);
     ~Application();
 
