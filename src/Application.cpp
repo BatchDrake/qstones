@@ -163,7 +163,7 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
       limits = SU_ABS(SU_C_REAL(p));
   }
 
-  series->setColor(QColor(0, 0, 200));
+  series->setColor(QColor(80, 80, 255));
   series->setName("Real part");
   this->chirpChart->addSeries(series);
 
@@ -179,7 +179,7 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
       limits = SU_ABS(SU_C_IMAG(p));
   }
 
-  series->setColor(QColor(200, 0, 0));
+  series->setColor(QColor(255, 80, 80));
   series->setName("Imaginary part");
   this->chirpChart->addSeries(series);
   this->chirpChart->createDefaultAxes();
@@ -196,7 +196,7 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
           qreal(n++) / qreal(this->currSampleRate), // FIXME
           qreal(p));
 
-  series->setColor(QColor(1, 1, 1));
+  series->setColor(QColor(230, 200, 0));
   series->setName("Doppler shift");
   this->dopplerChart->addSeries(series);
   this->dopplerChart->createDefaultAxes();
@@ -227,6 +227,7 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   // Add chirp chart
   this->chirpChart = new QChart();
   this->chirpChart->setTitle("Chirp signal over time");
+  this->chirpChart->setTheme(QChart::ChartThemeDark);
   this->chirpView = new QChartView(this->chirpChart);
   this->chirpView->setRenderHint(QPainter::Antialiasing);
 
@@ -239,6 +240,7 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   this->dopplerChart = new QChart();
   this->dopplerChart->setTitle("Doppler shift over time");
   this->dopplerChart->legend()->hide();
+  this->dopplerChart->setTheme(QChart::ChartThemeDark);
   this->dopplerView = new QChartView(this->dopplerChart);
   this->dopplerView->setRenderHint(QPainter::Antialiasing);
 
@@ -578,7 +580,14 @@ Application::onToggleLockPandapter(int state)
 void
 Application::onChirp(const EchoDetector::Chirp &chirp)
 {
+  int lastRow;
+
   this->chirpModel->pushChirp(chirp);
+
+  lastRow = this->chirpModel->rowCount() - 1;
+  this->ui->eventTable->scrollTo(
+        this->chirpModel->index(lastRow, 0));
+  this->ui->eventTable->selectRow(lastRow);
 }
 
 void
