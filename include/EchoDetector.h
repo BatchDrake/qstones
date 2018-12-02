@@ -58,6 +58,7 @@ namespace QStones {
 
     void emitChirp(const Chirp &);
     EchoDetector(QObject *, SUFLOAT, SUFLOAT);
+    EchoDetector(QObject *, SUFLOAT, SUFLOAT, SUFLOAT, SUFLOAT);
 
   signals:
     void new_chirp(const QStones::EchoDetector::Chirp &);

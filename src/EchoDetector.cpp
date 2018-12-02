@@ -190,7 +190,12 @@ EchoDetector::OnChirpFunc(
   return SU_TRUE;
 }
 
-EchoDetector::EchoDetector(QObject *parent, SUFLOAT fs, SUFLOAT fc) :
+EchoDetector::EchoDetector(
+    QObject *parent,
+    SUFLOAT fs,
+    SUFLOAT fc,
+    SUFLOAT lpf1,
+    SUFLOAT lpf2) :
   QObject(parent), instance(nullptr, graves_det_destroy)
 {
   graves_det_t *ptr;
@@ -199,10 +204,18 @@ EchoDetector::EchoDetector(QObject *parent, SUFLOAT fs, SUFLOAT fc) :
 
   params.fs = fs;
   params.fc = fc;
+  params.lpf1 = lpf1;
+  params.lpf2 = lpf2;
 
   SU_ATTEMPT(ptr = graves_det_new(&params, OnChirpFunc, this));
 
   this->instance = std::unique_ptr<graves_det_t, void (*)(graves_det_t *)>(ptr, graves_det_destroy);
+}
+
+EchoDetector::EchoDetector(QObject *parent, SUFLOAT fs, SUFLOAT fc) :
+  EchoDetector(parent, fs, fc, 300, 50)
+{
+
 }
 
 void

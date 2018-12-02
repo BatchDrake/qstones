@@ -572,7 +572,7 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox">
+            <widget class="QDoubleSpinBox" name="sbLPF1">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -604,7 +604,7 @@
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+            <widget class="QDoubleSpinBox" name="sbLPF2">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -613,6 +613,9 @@
              </property>
              <property name="suffix">
               <string> Hz</string>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
              </property>
              <property name="value">
               <double>50.000000000000000</double>

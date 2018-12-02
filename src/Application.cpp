@@ -416,6 +416,7 @@ Application::startCapture(void)
     if (this->state == HALTED) {
       std::unique_ptr<Suscan::Analyzer> analyzer;
       std::unique_ptr<EchoDetector> detector;
+      SUFLOAT lpf1, lpf2;
       SUFLOAT oldIfFreq = this->prop.ifFreq;
       int maxIfFreq;
 
@@ -443,6 +444,18 @@ Application::startCapture(void)
             return;
         }
       }
+
+      // Set filter cutoffs
+      lpf1 = SU_NORM2ABS_FREQ(
+            this->currProfile.getSampleRate(),
+            6 * GRAVES_MIN_LPF_CUTOFF);
+
+      lpf2 = SU_NORM2ABS_FREQ(
+            this->currProfile.getSampleRate(),
+            GRAVES_MIN_LPF_CUTOFF);
+
+      this->ui->sbLPF1->setValue(static_cast<double>(lpf1));
+      this->ui->sbLPF2->setValue(static_cast<double>(lpf2));
 
       // Throttle is only enabled for file source
       this->ui->cbThrottle->setEnabled(
@@ -475,7 +488,9 @@ Application::startCapture(void)
       detector = std::make_unique<EchoDetector>(
             this,
             this->currProfile.getSampleRate(),
-            this->prop.ifFreq);
+            this->prop.ifFreq,
+            lpf1,
+            lpf2);
 
       // Add baseband filter to feed echo detector
       analyzer.get()->registerBaseBandFilter(
