@@ -35,23 +35,44 @@ extern "C" {
 #define GRAVES_CENTER_FREQ SU_ADDSFX(143050000.)
 #define SPEED_OF_LIGHT     SU_ADDSFX(3e8)
 
+#if 0
 #define LPF1_CUTOFF SU_ADDSFX(300.) /* In Hz */
 #define LPF2_CUTOFF SU_ADDSFX(50.)  /* In Hz */
 #define GRAVES_POWER_RATIO (LPF2_CUTOFF / LPF1_CUTOFF)
 #define GRAVES_POWER_THRESHOLD (SU_ASFLOAT(2.) * GRAVES_POWER_RATIO)
+#endif
+
+#define GRAVES_MIN_LPF_CUTOFF SU_ABS2NORM_FREQ(8000, 50)
 
 #define MIN_CHIRP_DURATION SU_ADDSFX(0.07)
 
 typedef SUBOOL (*graves_chirp_cb_t) (
     void *privdata,
-    SUFLOAT fs,
     SUSCOUNT start,
     const SUCOMPLEX *data,
     SUSCOUNT len,
     SUFLOAT N0);
 
+struct graves_det_params {
+  SUFLOAT fs;
+  SUFLOAT fc;
+  SUFLOAT lpf1;
+  SUFLOAT lpf2;
+  SUFLOAT threshold;
+};
+
+#define graves_det_params_INITIALIZER \
+{                                     \
+  SU_ADDSFX(8000.), /* fs */          \
+  SU_ADDSFX(1000.), /* fc */          \
+  SU_ADDSFX(300.),  /* lpf1 */        \
+  SU_ADDSFX(50.),   /* lpf2 */        \
+  SU_ADDSFX(2.),    /* threshoid */   \
+}
+
 struct graves_det {
-  SUFLOAT fs;          /* Sample rate */
+  struct graves_det_params params;
+  SUFLOAT ratio;
   SUSCOUNT n;          /* Samples consumed */
   su_iir_filt_t lpf1; /* Low pass filter 1. Used to detect noise power */
   su_iir_filt_t lpf2; /* Low pass filter 2. Used to isolate chirps */
@@ -78,15 +99,27 @@ struct graves_det {
 
 typedef struct graves_det graves_det_t;
 
+SUINLINE SUFLOAT
+graves_det_get_ratio(const graves_det_t *det)
+{
+  return det->ratio;
+}
+
+SUINLINE const struct graves_det_params *
+graves_det_get_params(const graves_det_t *det)
+{
+  return &det->params;
+}
+
 void graves_det_destroy(graves_det_t *detect);
 
 void graves_det_set_center_freq(graves_det_t *md, SUFLOAT fc);
 
 SUBOOL graves_det_feed(graves_det_t *md, SUCOMPLEX x);
 
-graves_det_t *graves_det_new(
-    SUFLOAT fs,
-    SUFLOAT fc,
+graves_det_t *
+graves_det_new(
+    const struct graves_det_params *params,
     graves_chirp_cb_t chrp_fn,
     void *privdata);
 

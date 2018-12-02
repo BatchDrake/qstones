@@ -44,6 +44,13 @@ namespace QStones {
   public:
     struct Chirp;
 
+    static SUBOOL OnChirpFunc(
+        void *privdata,
+        SUSCOUNT start,
+        const SUCOMPLEX *data,
+        SUSCOUNT len,
+        SUFLOAT N0);
+
     void feed(const SUCOMPLEX *samples, SUSCOUNT len);
 
     // Lazy methods
@@ -60,6 +67,7 @@ namespace QStones {
   struct EchoDetector::Chirp {
     SUSCOUNT start;
     SUFLOAT N0;
+    struct graves_det_params params;
     std::vector<SUCOMPLEX> samples;
 
     // Processed members
@@ -70,10 +78,15 @@ namespace QStones {
     std::vector<SUFLOAT> doppler;
 
     // Methods
-    void process(SUSCOUNT fs);
+    void process(void);
 
     // Constructors
-    Chirp(SUSCOUNT start, const SUCOMPLEX *data, SUSCOUNT len, SUFLOAT N0);
+    Chirp(
+        const struct graves_det_params *params,
+        SUSCOUNT start,
+        const SUCOMPLEX *data,
+        SUSCOUNT len,
+        SUFLOAT N0);
     Chirp(); // QT made me do this
 
     Chirp(const Chirp &);

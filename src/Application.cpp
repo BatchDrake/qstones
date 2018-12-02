@@ -414,6 +414,8 @@ Application::startCapture(void)
 
   try {
     if (this->state == HALTED) {
+      std::unique_ptr<Suscan::Analyzer> analyzer;
+      std::unique_ptr<EchoDetector> detector;
       SUFLOAT oldIfFreq = this->prop.ifFreq;
       int maxIfFreq;
 
@@ -465,19 +467,24 @@ Application::startCapture(void)
       // Flush log messages from here
       flushLog();
 
-      this->analyzer = std::make_unique<Suscan::Analyzer>(
+      // Allocate objects
+      analyzer = std::make_unique<Suscan::Analyzer>(
             default_params,
             this->currProfile);
 
-      this->detector = std::make_unique<EchoDetector>(
+      detector = std::make_unique<EchoDetector>(
             this,
             this->currProfile.getSampleRate(),
             this->prop.ifFreq);
 
       // Add baseband filter to feed echo detector
-      this->analyzer.get()->registerBaseBandFilter(
+      analyzer.get()->registerBaseBandFilter(
             onBaseBandData,
-            this->detector.get());
+            detector.get());
+
+      // All set, move to application
+      this->analyzer = std::move(analyzer);
+      this->detector = std::move(detector);
 
       this->connectDetector();
       this->connectAnalyzer();
@@ -488,7 +495,7 @@ Application::startCapture(void)
     (void)  QMessageBox::critical(
           this,
           "QStones error",
-          "Failed to create analyzer object. Errors were:<p /><pre>"
+          "Failed to start capture due to errors:<p /><pre>"
           + getLogText()
           + "</pre>",
           QMessageBox::Ok);

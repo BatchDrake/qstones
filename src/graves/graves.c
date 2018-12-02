@@ -80,12 +80,13 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
     if (energy < md->energy_thres) {
       /* DETECTED: CHIRP END */
       md->in_chirp = SU_FALSE;
-      start   = (SUSCOUNT) (SU_FLOOR(SU_ASFLOAT(md->n - start) / md->fs));
+      start =
+          (SUSCOUNT) (SU_FLOOR(SU_ASFLOAT(md->n - start) / md->params.fs));
 
       SU_TRYCATCH(
           (md->on_chirp) (
               md->privdata,
-              md->fs, start,
+              start,
               (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp),
               grow_buf_get_size(&md->chirp) / sizeof(SUCOMPLEX),
               md->n0_start),
@@ -131,33 +132,77 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
 void
 graves_det_set_center_freq(graves_det_t *md, SUFLOAT fc)
 {
-  su_ncqo_set_freq(&md->lo, SU_ABS2NORM_FREQ(md->fs, fc));
+  su_ncqo_set_freq(
+        &md->lo,
+        SU_ABS2NORM_FREQ(md->params.fs, fc));
+}
+
+SUPRIVATE SUBOOL
+graves_det_check_params(const struct graves_det_params *params)
+{
+  if (params->lpf1 <= params->lpf2) {
+    SU_ERROR("Illegal filter cutoff frequencies (lpf1 < lpf2)\n");
+    return SU_FALSE;
+  }
+
+  if (SU_ABS2NORM_FREQ(
+        params->fs,
+        params->lpf1) < GRAVES_MIN_LPF_CUTOFF) {
+    SU_ERROR(
+          "LPF1 is too narrow (safe minimum is %g Hz)",
+          SU_NORM2ABS_FREQ(params->fs, GRAVES_MIN_LPF_CUTOFF));
+    return SU_FALSE;
+  }
+
+  if (SU_ABS2NORM_FREQ(
+        params->fs,
+        params->lpf2) < GRAVES_MIN_LPF_CUTOFF) {
+    SU_ERROR(
+          "LPF2 is too narrow (safe minimum is %g Hz)",
+          SU_NORM2ABS_FREQ(params->fs, GRAVES_MIN_LPF_CUTOFF));
+    return SU_FALSE;
+  }
+
+  return SU_TRUE;
 }
 
 graves_det_t *
-graves_det_new(SUFLOAT fs, SUFLOAT fc, graves_chirp_cb_t chrp_fn, void *privdata)
+graves_det_new(
+    const struct graves_det_params *params,
+    graves_chirp_cb_t chrp_fn,
+    void *privdata)
 {
   graves_det_t *new = NULL;
 
+  if (!graves_det_check_params(params))
+    return NULL;
+
   SU_TRYCATCH(new = calloc(1, sizeof (graves_det_t)), goto fail);
 
-  new->fs = fs;
-  new->alpha = 1 - SU_EXP(-SU_ADDSFX(1.) / (fs * MIN_CHIRP_DURATION));
+  new->params = *params;
+  new->ratio  = params->lpf2 / params->lpf1;
+  new->alpha = 1 - SU_EXP(-SU_ADDSFX(1.) / (params->fs * MIN_CHIRP_DURATION));
   new->on_chirp = chrp_fn;
   new->privdata = privdata;
 
-  su_ncqo_init(&new->lo, SU_ABS2NORM_FREQ(fs, fc));
+  su_ncqo_init(&new->lo, SU_ABS2NORM_FREQ(params->fs, params->fc));
 
   SU_TRYCATCH(
-      su_iir_bwlpf_init(&new->lpf1, 5, SU_ABS2NORM_FREQ(fs, LPF1_CUTOFF)),
+      su_iir_bwlpf_init(
+          &new->lpf1,
+          5,
+          SU_ABS2NORM_FREQ(params->fs, params->lpf1)),
       goto fail);
 
   SU_TRYCATCH(
-      su_iir_bwlpf_init(&new->lpf2, 4, SU_ABS2NORM_FREQ(fs, LPF2_CUTOFF)),
+      su_iir_bwlpf_init(
+          &new->lpf2,
+          4,
+          SU_ABS2NORM_FREQ(params->fs, params->lpf2)),
       goto fail);
 
-  new->hist_len = (SUSCOUNT) (SU_CEIL(fs * MIN_CHIRP_DURATION));
-  new->energy_thres = GRAVES_POWER_THRESHOLD * new->hist_len;
+  new->hist_len = (SUSCOUNT) (SU_CEIL(params->fs * MIN_CHIRP_DURATION));
+  new->energy_thres = params->threshold * new->ratio * new->hist_len;
 
   SU_TRYCATCH(
       new->snr_hist   = calloc(sizeof(SUFLOAT), new->hist_len),

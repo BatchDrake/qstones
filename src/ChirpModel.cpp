@@ -150,7 +150,7 @@ ChirpModel::pushChirp(const EchoDetector::Chirp &chirp)
   this->chirps.push_back(chirp);
 
   // Process chirp data
-  (this->chirps.end() - 1)->process(this->app.currSampleRate);
+  (this->chirps.end() - 1)->process();
 
   emit layoutChanged();
 }
