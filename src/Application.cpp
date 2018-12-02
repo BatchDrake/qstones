@@ -147,6 +147,19 @@ Application::connectAll(void)
         SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)),
         this,
         SLOT(onChirpSelected(const QItemSelection &, const QItemSelection &)));
+
+  connect(
+        this->ui->cbThrottle,
+        SIGNAL(stateChanged(int)),
+        this,
+        SLOT(onThrottleChanged(void)));
+
+  connect(
+        this->ui->sbThrottleValue,
+        SIGNAL(valueChanged(int)),
+        this,
+        SLOT(onThrottleChanged(void)));
+
 }
 
 void
@@ -276,6 +289,8 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   this->setPandapterLocked(this->prop.lockPandapter);
   this->setSpectrumMinDb(this->prop.minDb);
   this->setSpectrumMaxDb(this->prop.maxDb);
+  this->setThrottleEnabled(this->prop.throttle);
+  this->setThrottleValue(this->prop.efSampRate);
 }
 
 void
@@ -402,26 +417,34 @@ Application::startCapture(void)
       SUFLOAT oldIfFreq = this->prop.ifFreq;
       int maxIfFreq;
 
-      if (this->currProfile.getType() == SUSCAN_SOURCE_TYPE_SDR
-          && this->currProfile.getSampleRate() > QSTONES_MAX_SAMPLE_RATE) {
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(
-              this,
-              "Sample rate too high",
-              "The sample rate of profile \""
-              + QString::fromStdString(this->currProfile.label())
-              + "\" is unusually big ("
-              + QString::number(this->currProfile.getSampleRate())
-              + "). Temporarily reduce it to "
-              + QString::number(QSTONES_MAX_SAMPLE_RATE)
-              + "?",
-              QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+      this->firstPSDrecv = false;
 
-        if (reply == QMessageBox::Yes)
-          this->currProfile.setSampleRate(QSTONES_MAX_SAMPLE_RATE);
-        else if (reply == QMessageBox::Cancel)
-          return;
+      if (this->currProfile.getType() == SUSCAN_SOURCE_TYPE_SDR) {
+        this->setThrottleEnabled(false);
+        if (this->currProfile.getSampleRate() > QSTONES_MAX_SAMPLE_RATE) {
+          QMessageBox::StandardButton reply;
+          reply = QMessageBox::question(
+                this,
+                "Sample rate too high",
+                "The sample rate of profile \""
+                + QString::fromStdString(this->currProfile.label())
+                + "\" is unusually big ("
+                + QString::number(this->currProfile.getSampleRate())
+                + "). Temporarily reduce it to "
+                + QString::number(QSTONES_MAX_SAMPLE_RATE)
+                + "?",
+                QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+
+          if (reply == QMessageBox::Yes)
+            this->currProfile.setSampleRate(QSTONES_MAX_SAMPLE_RATE);
+          else if (reply == QMessageBox::Cancel)
+            return;
+        }
       }
+
+      // Throttle is only enabled for file source
+      this->ui->cbThrottle->setEnabled(
+            this->currProfile.getType() == SUSCAN_SOURCE_TYPE_FILE);
 
       maxIfFreq = this->currProfile.getSampleRate() / 2;
 
@@ -482,7 +505,7 @@ Application::stopCapture(void)
 }
 
 void
-Application::setSampleRate(SUSCOUNT rate)
+Application::setSampleRate(unsigned int rate)
 {
   if (this->currSampleRate != rate) {
     this->plotter->setSampleRate(rate);
@@ -496,6 +519,11 @@ Application::onPSDMessage(const Suscan::PSDMessage &msg)
 {
   this->setSampleRate(msg.getSampleRate());
   this->plotter->setNewFftData((float *) msg.get(), (int) msg.size());
+  if (!this->firstPSDrecv) {
+    if (this->prop.throttle)
+      this->setThrottleValue(this->prop.efSampRate);
+    this->firstPSDrecv = true;
+  }
 }
 
 void
@@ -591,6 +619,36 @@ Application::setIfFrequency(SUFLOAT freq, bool updateUi)
     this->syncPlotter();
     this->ui->sbIFFreq->setValue(static_cast<int>(freq));
   }
+}
+
+void
+Application::setThrottleEnabled(bool enabled, bool updateUi)
+{
+  this->prop.throttle = enabled;
+
+  if (this->state == RUNNING)
+    this->analyzer.get()->setThrottle(
+          this->prop.throttle
+          ? this->prop.efSampRate
+          : this->currSampleRate);
+
+  if (updateUi)
+    this->ui->cbThrottle->setChecked(enabled);
+}
+
+void
+Application::setThrottleValue(unsigned int value, bool updateUi)
+{
+  this->prop.efSampRate = value;
+
+  if (this->state == RUNNING)
+    this->analyzer.get()->setThrottle(
+          this->prop.throttle
+          ? this->prop.efSampRate
+          : this->currSampleRate);
+
+  if (updateUi)
+    this->ui->sbThrottleValue->setValue(static_cast<int>(value));
 }
 
 void
@@ -694,6 +752,15 @@ Application::onChirpSelected(const QItemSelection &, const QItemSelection &)
           static_cast<unsigned long>(selected.at(0).row()));
     this->updateChirpCharts(chirp);
   }
+}
+
+void
+Application::onThrottleChanged(void)
+{
+  this->setThrottleEnabled(this->ui->cbThrottle->isChecked(), false);
+  this->setThrottleValue(
+        static_cast<unsigned int>(this->ui->sbThrottleValue->value()), false);
+  this->ui->sbThrottleValue->setEnabled(this->prop.throttle);
 }
 
 Application::~Application()

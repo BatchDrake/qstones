@@ -66,6 +66,7 @@ namespace Suscan {
     void *read(uint32_t &type);
     void registerBaseBandFilter(suscan_analyzer_baseband_filter_func_t, void *);
     void setFrequency(SUFREQ freq);
+    void setThrottle(unsigned int throttle);
     void halt(void);
 
     Analyzer(

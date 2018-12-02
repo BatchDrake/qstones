@@ -37,6 +37,8 @@
 #define QSTONES_DEFAULT_IF_FREQ    SU_ADDSFX(1000.)
 #define QSTONES_DEFAULT_PEAK_HOLD  false
 #define QSTONES_DEFAULT_LOCK       true
+#define QSTONES_DEFAULT_THROTTLE   false
+#define QSTONES_DEFAULT_THRSMPRATE 250000
 #define QSTONES_DEFAULT_WF_PROP    SU_ADDSFX(.5)
 #define QSTONES_DEFAULT_SNR_BW     SU_ADDSFX(.16)
 #define QSTONES_DEFAULT_MIN_DB     -140
@@ -71,14 +73,16 @@ namespace QStones {
   };
 
   struct ApplicationProperties {
-    SUFREQ  tunFreq       = QSTONES_DEFAULT_TUNER_FREQ;
-    SUFLOAT ifFreq        = QSTONES_DEFAULT_IF_FREQ;
-    bool    peakHold      = QSTONES_DEFAULT_PEAK_HOLD;
-    bool    lockPandapter = QSTONES_DEFAULT_LOCK;
-    SUFLOAT snrBw         = QSTONES_DEFAULT_SNR_BW;
-    SUFLOAT swProp        = QSTONES_DEFAULT_WF_PROP;
-    int     minDb         = QSTONES_DEFAULT_MIN_DB;
-    int     maxDb         = QSTONES_DEFAULT_MAX_DB;
+    SUFREQ  tunFreq         = QSTONES_DEFAULT_TUNER_FREQ;
+    SUFLOAT ifFreq          = QSTONES_DEFAULT_IF_FREQ;
+    bool    peakHold        = QSTONES_DEFAULT_PEAK_HOLD;
+    bool    lockPandapter   = QSTONES_DEFAULT_LOCK;
+    SUFLOAT snrBw           = QSTONES_DEFAULT_SNR_BW;
+    SUFLOAT swProp          = QSTONES_DEFAULT_WF_PROP;
+    int     minDb           = QSTONES_DEFAULT_MIN_DB;
+    int     maxDb           = QSTONES_DEFAULT_MAX_DB;
+    bool    throttle        = QSTONES_DEFAULT_THROTTLE;
+    unsigned int efSampRate = QSTONES_DEFAULT_THRSMPRATE;
   };
 
   class Application : public QMainWindow
@@ -98,7 +102,8 @@ namespace QStones {
     std::unique_ptr<EchoDetector> detector;
 
     State state;
-    SUSCOUNT currSampleRate;
+    bool firstPSDrecv = false;
+    unsigned int currSampleRate;
     struct ApplicationProperties prop;
 
     // UI
@@ -119,7 +124,7 @@ namespace QStones {
     void connectAnalyzer(void);
     void connectDetector(void);
     void syncPlotter(void);
-    void setSampleRate(SUSCOUNT rate);
+    void setSampleRate(unsigned int rate);
     void updateChirpCharts(const EchoDetector::Chirp &);
 
     friend class ChirpModel;
@@ -139,6 +144,8 @@ namespace QStones {
     void setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi = true);
     void setSpectrumMinDb(int min, bool updateUi = true);
     void setSpectrumMaxDb(int max, bool updateUi = true);
+    void setThrottleEnabled(bool, bool updateUi = true);
+    void setThrottleValue(unsigned int, bool updateUi = true);
 
     explicit Application(QWidget *parent = nullptr);
     ~Application();
@@ -158,6 +165,7 @@ namespace QStones {
     void onPlotterNewIfFreq(qint64 freq, qint64 delta);
     void onToggleLockPandapter(int state);
     void onTogglePeakHold(int state);
+    void onThrottleChanged(void);
     void onChirp(const QStones::EchoDetector::Chirp &);
     void onChirpSelected(const QItemSelection &, const QItemSelection &);
   };

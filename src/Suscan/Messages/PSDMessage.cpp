@@ -46,12 +46,12 @@ PSDMessage::size(void) const
   return msg->psd_size;
 }
 
-SUSCOUNT
+unsigned int
 PSDMessage::getSampleRate(void) const
 {
   const struct suscan_analyzer_psd_msg *msg
       = static_cast<struct suscan_analyzer_psd_msg *>(this->c_message.get());
-  return msg->samp_rate;
+  return static_cast<unsigned int>(msg->samp_rate);
 }
 
 const SUFLOAT *

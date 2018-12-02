@@ -92,6 +92,15 @@ Analyzer::read(uint32_t &type)
 }
 
 void
+Analyzer::setThrottle(unsigned int throttle)
+{
+  suscan_analyzer_set_throttle_async(
+        this->instance,
+        throttle,
+        0);
+}
+
+void
 Analyzer::registerBaseBandFilter(suscan_analyzer_baseband_filter_func_t func, void *privdata)
 {
   SU_ATTEMPT(suscan_analyzer_register_baseband_filter(this->instance, func, privdata));
