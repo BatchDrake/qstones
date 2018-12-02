@@ -81,7 +81,7 @@ SUBDIRS += \
     qstones.pro
 
 RESOURCES += \
-    icons/oxygen.qrc
+    icons/resources.qrc
 
 unix: CONFIG += link_pkgconfig
 unix: PKGCONFIG += suscan

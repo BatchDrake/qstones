@@ -39,6 +39,7 @@ namespace QStones {
 
     void connectAll(void);
     void populateProfiles(void);
+    static QString getBaseName(const QString &string);
 
   public:
     Suscan::Source::Config getProfile(void);

@@ -2570,4 +2570,7 @@
         <file>oxygen/22x22/status/weather-storm.png</file>
         <file>oxygen/22x22/status/window-suppressed.png</file>
     </qresource>
+    <qresource prefix="/">
+        <file>../splash.png</file>
+    </qresource>
 </RCC>

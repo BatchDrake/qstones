@@ -48,7 +48,7 @@ InitThread::run()
 Loader::Loader(Application *app)
 {
   QFont font;
-  static QPixmap background(QString("/home/waldo/Documents/Desarrollo/qstones/splash.png"));
+  static QPixmap background(QString(":/splash.png"));
 
   this->suscan = Suscan::Singleton::get_instance();
   this->app = app;

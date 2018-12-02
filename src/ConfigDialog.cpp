@@ -184,6 +184,17 @@ ConfigDialog::onRadioButtonToggle(bool)
   this->ui->profileCombo->setEnabled(this->ui->rbSuscan->isChecked());
 }
 
+QString
+ConfigDialog::getBaseName(const QString &path)
+{
+  int ndx;
+
+  if ((ndx = path.lastIndexOf('/')) != -1)
+    return path.right(path.size() - ndx - 1);
+
+  return path;
+}
+
 void
 ConfigDialog::onBrowseIqClicked(void)
 {
@@ -194,7 +205,7 @@ ConfigDialog::onBrowseIqClicked(void)
         "IQ files (*.raw);;All files (*)");
 
   if (!path.isEmpty()) {
-    this->ui->lIqPath->setText(path);
+    this->ui->lIqPath->setText(getBaseName(path));
     this->iqProfile.setPath(path.toStdString());
   }
 }
@@ -209,7 +220,7 @@ ConfigDialog::onBrowseWavClicked(void)
         "WAV files (*.wav);;All files (*)");
 
   if (!path.isEmpty()) {
-    this->ui->lWavPath->setText(path);
+    this->ui->lWavPath->setText(getBaseName(path));
     this->wavProfile.setPath(path.toStdString());
   }
 }
