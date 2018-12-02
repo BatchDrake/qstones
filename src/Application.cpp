@@ -160,6 +160,18 @@ Application::connectAll(void)
         this,
         SLOT(onThrottleChanged(void)));
 
+  connect(
+        this->ui->actionQuit,
+        SIGNAL(triggered(bool)),
+        QApplication::instance(),
+        SLOT(quit()));
+
+  connect(
+        this->ui->actionClear_all,
+        SIGNAL(triggered(bool)),
+        this,
+        SLOT(onClearEventTable(void)));
+
 }
 
 void
@@ -783,6 +795,26 @@ Application::onThrottleChanged(void)
   this->setThrottleValue(
         static_cast<unsigned int>(this->ui->sbThrottleValue->value()), false);
   this->ui->sbThrottleValue->setEnabled(this->prop.throttle);
+}
+
+void
+Application::onClearEventTable(void)
+{
+  if (this->chirpModel->rowCount() > 0) {
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(
+          this,
+          "Clear event table",
+          "You are about to delete "
+          + QString::number(this->chirpModel->rowCount())
+          + " events from the event table. "
+          + "This action cannot be undone. "
+          + "Are you sure?",
+          QMessageBox::Yes | QMessageBox::No);
+
+    if (reply == QMessageBox::Yes)
+      this->chirpModel->clear();
+  }
 }
 
 Application::~Application()

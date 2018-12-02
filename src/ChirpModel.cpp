@@ -154,3 +154,11 @@ ChirpModel::pushChirp(const EchoDetector::Chirp &chirp)
 
   emit layoutChanged();
 }
+
+void
+ChirpModel::clear(void)
+{
+  this->chirps.clear();
+
+  emit layoutChanged();
+}

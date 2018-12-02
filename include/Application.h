@@ -66,6 +66,7 @@ namespace QStones {
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
+    void clear(void);
     void pushChirp(const EchoDetector::Chirp &chirp);
     const EchoDetector::Chirp &at(unsigned long index) const;
 
@@ -168,6 +169,7 @@ namespace QStones {
     void onThrottleChanged(void);
     void onChirp(const QStones::EchoDetector::Chirp &);
     void onChirpSelected(const QItemSelection &, const QItemSelection &);
+    void onClearEventTable(void);
   };
 };
 
