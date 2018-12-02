@@ -80,6 +80,8 @@ typedef struct graves_det graves_det_t;
 
 void graves_det_destroy(graves_det_t *detect);
 
+void graves_det_set_center_freq(graves_det_t *md, SUFLOAT fc);
+
 SUBOOL graves_det_feed(graves_det_t *md, SUCOMPLEX x);
 
 graves_det_t *graves_det_new(

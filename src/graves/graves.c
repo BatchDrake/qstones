@@ -128,6 +128,12 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
   return SU_TRUE;
 }
 
+void
+graves_det_set_center_freq(graves_det_t *md, SUFLOAT fc)
+{
+  su_ncqo_set_freq(&md->lo, SU_ABS2NORM_FREQ(md->fs, fc));
+}
+
 graves_det_t *
 graves_det_new(SUFLOAT fs, SUFLOAT fc, graves_chirp_cb_t chrp_fn, void *privdata)
 {

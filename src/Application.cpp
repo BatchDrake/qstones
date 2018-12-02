@@ -399,6 +399,9 @@ Application::startCapture(void)
 
   try {
     if (this->state == HALTED) {
+      SUFLOAT oldIfFreq = this->prop.ifFreq;
+      int maxIfFreq;
+
       if (this->currProfile.getType() == SUSCAN_SOURCE_TYPE_SDR
           && this->currProfile.getSampleRate() > QSTONES_MAX_SAMPLE_RATE) {
         QMessageBox::StandardButton reply;
@@ -418,6 +421,22 @@ Application::startCapture(void)
           this->currProfile.setSampleRate(QSTONES_MAX_SAMPLE_RATE);
         else if (reply == QMessageBox::Cancel)
           return;
+      }
+
+      maxIfFreq = this->currProfile.getSampleRate() / 2;
+
+      this->ui->sbIFFreq->setMaximum(+maxIfFreq);
+      this->ui->sbIFFreq->setMinimum(-maxIfFreq);
+      this->setIfFrequency(oldIfFreq);
+
+      if (SU_ABS(oldIfFreq) > maxIfFreq) {
+        this->setIfFrequency(0);
+
+        QMessageBox::information(
+              this,
+              "IF out of bounds",
+              "Detector IF was set to 0 Hz to fit sample rate constraints.",
+              QMessageBox::Ok);
       }
 
       // Flush log messages from here
@@ -560,11 +579,13 @@ Application::setSpectrumMaxDb(int max, bool updateUi)
 }
 
 void
-Application::setIfFrequency(SUFREQ freq, bool updateUi)
+Application::setIfFrequency(SUFLOAT freq, bool updateUi)
 {
   this->prop.ifFreq = freq;
 
-  // TODO: Change demodulator frequency
+  // Queue update of center frequency
+  if (this->state == RUNNING)
+    this->detector.get()->setFreqLater(freq);
 
   if (updateUi) {
     this->syncPlotter();

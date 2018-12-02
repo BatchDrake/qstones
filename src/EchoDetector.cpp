@@ -186,8 +186,21 @@ EchoDetector::EchoDetector(QObject *parent, SUFLOAT fs, SUFLOAT fc) :
 void
 EchoDetector::feed(const SUCOMPLEX *samples, SUSCOUNT len)
 {
+  // Apply changes lazily
+  if (this->freq_changed) {
+    graves_det_set_center_freq(this->instance.get(), this->new_freq);
+    this->freq_changed = false;
+  }
+
   for (unsigned int i = 0; i < len; ++i)
     SU_ATTEMPT(graves_det_feed(this->instance.get(), samples[i]));
+}
+
+void
+EchoDetector::setFreqLater(SUFLOAT freq)
+{
+  this->new_freq = freq;
+  this->freq_changed = true;
 }
 
 void

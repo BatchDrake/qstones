@@ -33,6 +33,11 @@ namespace QStones {
 
   private:
     std::unique_ptr<graves_det_t, void (*)(graves_det_t *)> instance;
+
+    // FIXME: do we actually need to lock these?
+    bool freq_changed = false;
+    SUFLOAT new_freq;
+
     static bool registered;
     void assertTypeRegistration(void);
 
@@ -40,6 +45,10 @@ namespace QStones {
     struct Chirp;
 
     void feed(const SUCOMPLEX *samples, SUSCOUNT len);
+
+    // Lazy methods
+    void setFreqLater(SUFLOAT new_freq);
+
     void emitChirp(const Chirp &);
     EchoDetector(QObject *, SUFLOAT, SUFLOAT);
 

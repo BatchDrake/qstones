@@ -34,7 +34,7 @@
 #include "EchoDetector.h"
 
 #define QSTONES_DEFAULT_TUNER_FREQ 143049000
-#define QSTONES_DEFAULT_IF_FREQ    1000
+#define QSTONES_DEFAULT_IF_FREQ    SU_ADDSFX(1000.)
 #define QSTONES_DEFAULT_PEAK_HOLD  false
 #define QSTONES_DEFAULT_LOCK       true
 #define QSTONES_DEFAULT_WF_PROP    SU_ADDSFX(.5)
@@ -72,7 +72,7 @@ namespace QStones {
 
   struct ApplicationProperties {
     SUFREQ  tunFreq       = QSTONES_DEFAULT_TUNER_FREQ;
-    SUFREQ  ifFreq        = QSTONES_DEFAULT_IF_FREQ;
+    SUFLOAT ifFreq        = QSTONES_DEFAULT_IF_FREQ;
     bool    peakHold      = QSTONES_DEFAULT_PEAK_HOLD;
     bool    lockPandapter = QSTONES_DEFAULT_LOCK;
     SUFLOAT snrBw         = QSTONES_DEFAULT_SNR_BW;
@@ -135,7 +135,7 @@ namespace QStones {
     void setPandapterLocked(bool value, bool updateUi = true);
     void setPeakHold(bool value, bool updateUi = true);
     void setTunerFrequency(SUFREQ freq, bool updateUi = true);
-    void setIfFrequency(SUFREQ freq, bool updateUi = true);
+    void setIfFrequency(SUFLOAT freq, bool updateUi = true);
     void setSpectrumWaterfallProportion(SUFLOAT prop, bool updateUi = true);
     void setSpectrumMinDb(int min, bool updateUi = true);
     void setSpectrumMaxDb(int max, bool updateUi = true);
