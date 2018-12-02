@@ -765,5 +765,7 @@ Application::onThrottleChanged(void)
 
 Application::~Application()
 {
+  // Ensure analyzer is properly stopped
+  this->analyzer = nullptr;
   delete this->ui;
 }
