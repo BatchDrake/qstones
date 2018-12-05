@@ -55,14 +55,19 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
   struct graves_chirp_info info;
   unsigned int i;
 
-  y = su_iir_filt_feed(&md->lpf1, x * SU_C_CONJ(su_ncqo_read(&md->lo)));
+  x *= SU_C_CONJ(su_ncqo_read(&md->lo));
+
+  y = su_iir_filt_feed(&md->lpf1, x);
   md->p_w += md->alpha * (SU_C_REAL(y * SU_C_CONJ(y)) - md->p_w);
 
-  y = su_iir_filt_feed(&md->lpf2, y);
+  y = su_iir_filt_feed(&md->lpf2, x);
   md->p_n += md->alpha * (SU_C_REAL(y * SU_C_CONJ(y)) - md->p_n);
 
   /* Compute power quotient */
   Q = md->p_n / md->p_w;
+
+  if (Q > 1)
+    SU_WARNING("Q too high!\n");
 
   /* Update histories */
   md->p_n_hist[md->p]  = md->p_n;
@@ -88,7 +93,6 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
       info.length = (unsigned int) grow_buf_get_size(&md->chirp) / sizeof(SUCOMPLEX);
       info.t0     = (md->n - info.length) / md->params.fs;
       info.t0f    = SU_ASFLOAT((md->n - info.length) % md->params.fs) / md->params.fs;
-
       info.x      = (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp);
       info.q      = (const SUFLOAT *) grow_buf_get_buffer(&md->q);
       info.p_n    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_n_buf);
@@ -126,6 +130,9 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
 
       /* Save all samples in the delay line to the grow buffer */
       grow_buf_shrink(&md->chirp);
+      grow_buf_shrink(&md->q);
+      grow_buf_shrink(&md->p_n_buf);
+
       for (i = 0; i < md->hist_len; ++i) {
         SU_TRYCATCH(
             grow_buf_append(

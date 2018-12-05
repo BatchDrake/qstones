@@ -33,33 +33,32 @@ EchoDetector::Chirp::process(void)
   SUCOMPLEX prev = 0;
   SUFLOAT offset, thisDoppler;
   SUFLOAT dopplerSum = 0;
-  SUFLOAT maxSNR = 0;
   SUFLOAT snrSum = 0;
+  SUFLOAT K;
 
   len = this->samples.size();
 
   this->doppler.resize(len);
-  this->snr.resize(len);
+  this->softDoppler.resize(len);
+
+  K = this->fs * SU_ADDSFX(.25) * SPEED_OF_LIGHT /
+      (GRAVES_CENTER_FREQ * SU_ADDSFX(M_PI));
 
   for (i = 0; i < len; ++i) {
     // Get immediate offset
-    offset = SU_C_ARG(this->samples[i] * SU_C_CONJ(prev))
-        / (2 * SU_ADDSFX(M_PI)) * this->fs;
+    offset = SU_C_ARG(this->samples[i] * SU_C_CONJ(prev));
 
     // Compute Doppler shift
-    thisDoppler = SU_ADDSFX(.5) * SPEED_OF_LIGHT * offset / GRAVES_CENTER_FREQ;
-    doppler[i]  = thisDoppler;
+    thisDoppler = K * offset;
+    this->doppler[i]  = thisDoppler;
 
-    if (maxSNR < snr[i])
-      maxSNR = snr[i];
-
-    dopplerSum += snr[i] * thisDoppler; // Weight by the SNR
-    snrSum     += snr[i]; // Compute accumulated SNR
+    dopplerSum += this->snr[i] * thisDoppler; // Weight by the SNR
+    snrSum     += this->snr[i]; // Compute accumulated SNR
 
     prev = this->samples[i];
   }
 
-  this->meanSNR     = maxSNR; // Changed to max SNR
+  this->meanSNR     = snrSum / len;
   this->meanDoppler = dopplerSum / snrSum;
   this->duration    = len / this->fs;
 
@@ -135,6 +134,7 @@ EchoDetector::Chirp::Chirp(const struct graves_chirp_info *info)
     // Compute noise power
     this->pN[i] =
         this->Rbw * graves_det_get_N0(this->Rbw, info->p_n[i], snr[i]);
+
   }
 }
 
