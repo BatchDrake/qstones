@@ -31,108 +31,130 @@ EchoDetector::Chirp::process(void)
 {
   unsigned long i, len;
   SUCOMPLEX prev = 0;
-  SUFLOAT offset, this_doppler;
-  SUFLOAT doppler_sum = 0;
-  SUFLOAT E = 0;
-  SUFLOAT A2;
-  SUFLOAT ratio;
-
-  ratio = this->params.lpf2 / this->params.lpf1;
+  SUFLOAT offset, thisDoppler;
+  SUFLOAT dopplerSum = 0;
+  SUFLOAT maxSNR = 0;
+  SUFLOAT snrSum = 0;
 
   len = this->samples.size();
+
   this->doppler.resize(len);
+  this->snr.resize(len);
 
   for (i = 0; i < len; ++i) {
-    // Compute square of the amplitude
-    A2 = SU_C_REAL(this->samples[i] * SU_C_CONJ(this->samples[i]));
-    E += A2; // Energy integration
-
     // Get immediate offset
     offset = SU_C_ARG(this->samples[i] * SU_C_CONJ(prev))
-        / (2 * SU_ADDSFX(M_PI)) * this->params.fs;
+        / (2 * SU_ADDSFX(M_PI)) * this->fs;
 
     // Compute Doppler shift
-    this_doppler = SU_ADDSFX(.5) * SPEED_OF_LIGHT * offset / GRAVES_CENTER_FREQ;
+    thisDoppler = SU_ADDSFX(.5) * SPEED_OF_LIGHT * offset / GRAVES_CENTER_FREQ;
+    doppler[i]  = thisDoppler;
 
-    doppler_sum += A2 * this_doppler; // Weight by A2
-    doppler[i] = this_doppler;
+    if (maxSNR < snr[i])
+      maxSNR = snr[i];
+
+    dopplerSum += snr[i] * thisDoppler; // Weight by the SNR
+    snrSum     += snr[i]; // Compute accumulated SNR
 
     prev = this->samples[i];
   }
 
-  this->SNR = SU_POWER_DB_RAW(E / (ratio * len * N0));
-  this->mean_doppler = doppler_sum / E;
-  this->duration = len / this->params.fs;
+  this->meanSNR     = maxSNR; // Changed to max SNR
+  this->meanDoppler = dopplerSum / snrSum;
+  this->duration    = len / this->fs;
 
-  this->processed = true;
+  this->processed   = true;
 }
 
 EchoDetector::Chirp::Chirp(void) { } // Dumb constructor
 
-// C API constructor
-EchoDetector::Chirp::Chirp(
-    const struct graves_det_params *params,
-    SUSCOUNT start,
-    const SUCOMPLEX *data,
-    SUSCOUNT len,
-    SUFLOAT N0)
+static void
+copyCommonToChirp(EchoDetector::Chirp *dest, const EchoDetector::Chirp &prev)
 {
-  this->start = start;
-  this->params = *params;
-  this->samples.assign(data, data + len);
-  this->N0 = N0;
+  dest->start         = prev.start;
+  dest->startDecimal  = prev.startDecimal;
+  dest->Rbw           = prev.Rbw;
+  dest->fs            = prev.fs;
+
+  // Processed members
+  dest->processed     = prev.processed;
+  if (dest->processed) {
+    dest->meanSNR     = prev.meanSNR;
+    dest->meanDoppler = prev.meanDoppler;
+    dest->duration    = prev.duration;
+  }
+}
+
+static void
+copyToChirp(EchoDetector::Chirp *dest, const EchoDetector::Chirp &prev)
+{
+  copyCommonToChirp(dest, prev);
+
+  dest->samples    = prev.samples;
+  dest->snr        = prev.snr;
+  dest->pN         = prev.pN;
+
+  if (dest->processed) {
+    dest->doppler     = prev.doppler;
+    dest->softDoppler = prev.softDoppler;
+  }
+}
+
+static void
+moveToChirp(EchoDetector::Chirp *dest, EchoDetector::Chirp &&prev)
+{
+  dest->samples    = std::move(prev.samples);
+  dest->snr        = std::move(prev.snr);
+  dest->pN         = std::move(prev.pN);
+
+  if (dest->processed) {
+    dest->doppler     = std::move(prev.doppler);
+    dest->softDoppler = std::move(prev.softDoppler);
+  }
+}
+
+// C API constructor
+EchoDetector::Chirp::Chirp(const struct graves_chirp_info *info)
+{
+  unsigned int i;
+
+  this->start        = info->t0;
+  this->startDecimal = info->t0f;
+  this->Rbw          = info->rbw;
+  this->fs           = info->fs;
+
+  this->samples.assign(info->x, info->x + info->length);
+  this->snr.resize(info->length);
+  this->pN.resize(info->length);
+
+
+  for (i = 0; i < info->length; ++i) {
+    // We compute the SNR here directly
+    this->snr[i] = graves_det_q_to_snr(this->Rbw, info->q[i]);
+
+    // Compute noise power
+    this->pN[i] =
+        this->Rbw * graves_det_get_N0(this->Rbw, info->p_n[i], snr[i]);
+  }
 }
 
 // Copy constructor
 EchoDetector::Chirp::Chirp(const Chirp &prev)
 {
-  this->start = prev.start;
-  this->N0 = prev.N0;
-  this->samples = prev.samples;
-  this->params = prev.params;
-
-  this->processed = prev.processed;
-  if (this->processed) {
-    this->SNR = prev.SNR;
-    this->mean_doppler = prev.mean_doppler;
-    this->duration = prev.duration;
-    this->doppler = prev.doppler;
-  }
+  copyToChirp(this, prev);
 }
 
 // Move constructor
 EchoDetector::Chirp::Chirp(Chirp &&prev)
 {
-  this->start = prev.start;
-  this->N0 = prev.N0;
-  this->samples = std::move(prev.samples);
-  this->params = prev.params;
-
-  this->processed = prev.processed;
-  if (this->processed) {
-    this->SNR = prev.SNR;
-    this->mean_doppler = prev.mean_doppler;
-    this->duration = prev.duration;
-    this->doppler = std::move(prev.doppler);
-  }
+  moveToChirp(this, std::move(prev));
 }
 
 // Copy assign
 EchoDetector::Chirp &
 EchoDetector::Chirp::operator=(const Chirp &rhs)
 {
-  this->start = rhs.start;
-  this->N0 = rhs.N0;
-  this->samples = rhs.samples;
-  this->params = rhs.params;
-
-  this->processed = rhs.processed;
-  if (this->processed) {
-    this->SNR = rhs.SNR;
-    this->mean_doppler = rhs.mean_doppler;
-    this->duration = rhs.duration;
-    this->doppler = rhs.doppler;
-  }
+  copyToChirp(this, rhs);
 
   return *this;
 }
@@ -141,18 +163,7 @@ EchoDetector::Chirp::operator=(const Chirp &rhs)
 EchoDetector::Chirp &
 EchoDetector::Chirp::operator=(Chirp &&rhs)
 {
-  this->start = rhs.start;
-  this->N0 = rhs.N0;
-  this->samples = std::move(rhs.samples);
-  this->params = rhs.params;
-
-  this->processed = rhs.processed;
-  if (this->processed) {
-    this->SNR = rhs.SNR;
-    this->mean_doppler = rhs.mean_doppler;
-    this->duration = rhs.duration;
-    this->doppler = std::move(rhs.doppler);
-  }
+  moveToChirp(this, std::move(rhs));
 
   return *this;
 }
@@ -172,27 +183,18 @@ EchoDetector::assertTypeRegistration(void)
 SUBOOL
 EchoDetector::OnChirpFunc(
     void *privdata,
-    SUSCOUNT start,
-    const SUCOMPLEX *data,
-    SUSCOUNT len,
-    SUFLOAT N0)
+    const struct graves_chirp_info *info)
 {
   EchoDetector *detector = static_cast<EchoDetector *>(privdata);
 
-  detector->emitChirp(
-        EchoDetector::Chirp(
-        graves_det_get_params(detector->instance.get()),
-        start,
-        data,
-        len,
-        N0));
+  detector->emitChirp(EchoDetector::Chirp(info));
 
   return SU_TRUE;
 }
 
 EchoDetector::EchoDetector(
     QObject *parent,
-    SUFLOAT fs,
+    SUSCOUNT fs,
     SUFLOAT fc,
     SUFLOAT lpf1,
     SUFLOAT lpf2) :
@@ -212,7 +214,7 @@ EchoDetector::EchoDetector(
   this->instance = std::unique_ptr<graves_det_t, void (*)(graves_det_t *)>(ptr, graves_det_destroy);
 }
 
-EchoDetector::EchoDetector(QObject *parent, SUFLOAT fs, SUFLOAT fc) :
+EchoDetector::EchoDetector(QObject *parent, SUSCOUNT fs, SUFLOAT fc) :
   EchoDetector(parent, fs, fc, 300, 50)
 {
 

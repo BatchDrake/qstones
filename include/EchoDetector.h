@@ -46,10 +46,7 @@ namespace QStones {
 
     static SUBOOL OnChirpFunc(
         void *privdata,
-        SUSCOUNT start,
-        const SUCOMPLEX *data,
-        SUSCOUNT len,
-        SUFLOAT N0);
+        const struct graves_chirp_info *info);
 
     void feed(const SUCOMPLEX *samples, SUSCOUNT len);
 
@@ -57,8 +54,8 @@ namespace QStones {
     void setFreqLater(SUFLOAT new_freq);
 
     void emitChirp(const Chirp &);
-    EchoDetector(QObject *, SUFLOAT, SUFLOAT);
-    EchoDetector(QObject *, SUFLOAT, SUFLOAT, SUFLOAT, SUFLOAT);
+    EchoDetector(QObject *, SUSCOUNT, SUFLOAT);
+    EchoDetector(QObject *, SUSCOUNT, SUFLOAT, SUFLOAT, SUFLOAT);
 
   signals:
     void new_chirp(const QStones::EchoDetector::Chirp &);
@@ -67,27 +64,30 @@ namespace QStones {
   // TODO: ADD SAMPLE RATE!!!!
   struct EchoDetector::Chirp {
     SUSCOUNT start;
-    SUFLOAT N0;
-    struct graves_det_params params;
+    SUFLOAT  startDecimal;
+
+    SUSCOUNT fs;
+    SUFLOAT  Rbw;
+
     std::vector<SUCOMPLEX> samples;
+    std::vector<SUFLOAT> pN; // Noise power in the narrow channel
+    std::vector<SUFLOAT> snr;
 
     // Processed members
     bool processed = false;
-    SUFLOAT SNR = 0;
-    SUFLOAT mean_doppler = 0;
+
+    SUFLOAT meanSNR = 0; // This is a mean
+    SUFLOAT meanDoppler = 0; // Also  mear
     SUFLOAT duration = 0;
+
     std::vector<SUFLOAT> doppler;
+    std::vector<SUFLOAT> softDoppler;
 
     // Methods
     void process(void);
 
     // Constructors
-    Chirp(
-        const struct graves_det_params *params,
-        SUSCOUNT start,
-        const SUCOMPLEX *data,
-        SUSCOUNT len,
-        SUFLOAT N0);
+    Chirp(const struct graves_chirp_info *info);
     Chirp(); // QT made me do this
 
     Chirp(const Chirp &);

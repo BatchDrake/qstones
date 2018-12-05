@@ -46,24 +46,41 @@ extern "C" {
 
 #define MIN_CHIRP_DURATION SU_ADDSFX(0.07)
 
+struct graves_chirp_info {
+  SUSCOUNT t0;  /* Start time */
+  SUFLOAT t0f;  /* Decimal part of the start time */
+
+  SUSCOUNT fs;
+  SUFLOAT  rbw; /* Bandwidth ratio */
+
+  /* Unsigned int length */
+  unsigned int length;
+
+  /* Chirp data */
+  const SUCOMPLEX *x;
+
+  /* Quotient data */
+  const SUFLOAT   *q;
+
+  /* Narrow channel power data */
+  const SUFLOAT   *p_n;
+};
+
 typedef SUBOOL (*graves_chirp_cb_t) (
     void *privdata,
-    SUSCOUNT start,
-    const SUCOMPLEX *data,
-    SUSCOUNT len,
-    SUFLOAT N0);
+    const struct graves_chirp_info *info);
 
 struct graves_det_params {
-  SUFLOAT fs;
-  SUFLOAT fc;
-  SUFLOAT lpf1;
-  SUFLOAT lpf2;
-  SUFLOAT threshold;
+  SUSCOUNT fs;
+  SUFLOAT  fc;
+  SUFLOAT  lpf1;
+  SUFLOAT  lpf2;
+  SUFLOAT  threshold;
 };
 
 #define graves_det_params_INITIALIZER \
 {                                     \
-  SU_ADDSFX(8000.), /* fs */          \
+  8000,             /* fs */          \
   SU_ADDSFX(1000.), /* fc */          \
   SU_ADDSFX(300.),  /* lpf1 */        \
   SU_ADDSFX(50.),   /* lpf2 */        \
@@ -78,19 +95,21 @@ struct graves_det {
   su_iir_filt_t lpf2; /* Low pass filter 2. Used to isolate chirps */
   su_ncqo_t lo;
   SUFLOAT alpha;
-  SUFLOAT n0; /* Noise power */
-  SUFLOAT s0; /* Signal power */
+  SUFLOAT p_w; /* Wide channel power */
+  SUFLOAT p_n; /* Narrow channel power */
 
   SUSCOUNT hist_len;
   SUSCOUNT p;
-  SUFLOAT *snr_hist;
+  SUFLOAT   *p_n_hist;
+  SUFLOAT   *q_hist;
   SUCOMPLEX *samp_hist;
 
-  SUFLOAT   n0_start;
   SUFLOAT   energy_thres;
   SUBOOL    in_chirp;
 
   grow_buf_t chirp;
+  grow_buf_t q;
+  grow_buf_t p_n_buf;
 
   void *privdata;
 
@@ -98,6 +117,18 @@ struct graves_det {
 };
 
 typedef struct graves_det graves_det_t;
+
+SUINLINE SUFLOAT
+graves_det_q_to_snr(SUFLOAT ratio, SUFLOAT q)
+{
+  return (q - ratio) / (SU_ADDSFX(1.) - q);
+}
+
+SUINLINE SUFLOAT
+graves_det_get_N0(SUFLOAT ratio, SUFLOAT p_n, SUFLOAT snr)
+{
+  return p_n / (ratio + snr);
+}
 
 SUINLINE SUFLOAT
 graves_det_get_ratio(const graves_det_t *det)

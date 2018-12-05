@@ -245,8 +245,8 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
   this->dopplerChart->createDefaultAxes();
   this->dopplerChart->axisX()->setTitleText("Time (s)");
   this->dopplerChart->axisY()->setTitleText("Relative speed (m/s)");
-  this->dopplerChart->axisY()->setMin(-SU_ABS(2 * chirp.mean_doppler));
-  this->dopplerChart->axisY()->setMax(SU_ABS(2 * chirp.mean_doppler));
+  this->dopplerChart->axisY()->setMin(-SU_ABS(2 * chirp.meanDoppler));
+  this->dopplerChart->axisY()->setMax(SU_ABS(2 * chirp.meanDoppler));
 
 }
 

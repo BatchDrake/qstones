@@ -128,10 +128,10 @@ ChirpModel::data(const QModelIndex &index, int role) const
              static_cast<double>(this->app.currSampleRate));
 
       case 2:
-        return QString::number(static_cast<double>(chirp.SNR)) + " dB";
+        return QString::number(static_cast<double>(chirp.meanSNR)) + " dB";
 
       case 3:
-        return QString::number(static_cast<double>(chirp.mean_doppler)) + " m/s";
+        return QString::number(static_cast<double>(chirp.meanDoppler)) + " m/s";
     }
   }
 

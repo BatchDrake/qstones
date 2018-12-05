@@ -27,8 +27,11 @@
 void
 graves_det_destroy(graves_det_t *detect)
 {
-  if (detect->snr_hist != NULL)
-    free(detect->snr_hist);
+  if (detect->q_hist != NULL)
+    free(detect->q_hist);
+
+  if (detect->p_n_hist != NULL)
+    free(detect->p_n_hist);
 
   if (detect->samp_hist != NULL)
     free(detect->samp_hist);
@@ -37,6 +40,8 @@ graves_det_destroy(graves_det_t *detect)
   su_iir_filt_finalize(&detect->lpf2);
 
   grow_buf_clear(&detect->chirp);
+  grow_buf_clear(&detect->q);
+  grow_buf_clear(&detect->p_n_buf);
 
   free(detect);
 }
@@ -45,24 +50,23 @@ SUBOOL
 graves_det_feed(graves_det_t *md, SUCOMPLEX x)
 {
   SUCOMPLEX y;
-  SUFLOAT   snr;
+  SUFLOAT   Q;
   SUFLOAT   energy;
-  SUSCOUNT  start = 0;
-
+  struct graves_chirp_info info;
   unsigned int i;
 
   y = su_iir_filt_feed(&md->lpf1, x * SU_C_CONJ(su_ncqo_read(&md->lo)));
-  md->n0 += md->alpha * (SU_C_REAL(y * SU_C_CONJ(y)) - md->n0);
+  md->p_w += md->alpha * (SU_C_REAL(y * SU_C_CONJ(y)) - md->p_w);
 
   y = su_iir_filt_feed(&md->lpf2, y);
-  md->s0 += md->alpha * (SU_C_REAL(y * SU_C_CONJ(y)) - md->s0);
+  md->p_n += md->alpha * (SU_C_REAL(y * SU_C_CONJ(y)) - md->p_n);
 
-  snr = md->s0 / md->n0;
+  /* Compute power quotient */
+  Q = md->p_n / md->p_w;
 
-  /* Put SNR value */
-  md->snr_hist[md->p] = snr;
-
-  /* Keep demodulated sample in delay line */
+  /* Update histories */
+  md->p_n_hist[md->p]  = md->p_n;
+  md->q_hist[md->p]    = Q;
   md->samp_hist[md->p] = y;
 
   if (++md->p == md->hist_len)
@@ -73,24 +77,26 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
   /* Compute cross-correlation */
   energy = 0;
   for (i = 0; i < md->hist_len; ++i)
-    energy += md->snr_hist[i];
+    energy += md->q_hist[i];
 
   /* Detect chirp limits */
   if (md->in_chirp) {
     if (energy < md->energy_thres) {
       /* DETECTED: CHIRP END */
       md->in_chirp = SU_FALSE;
-      start =
-          (SUSCOUNT) (SU_FLOOR(SU_ASFLOAT(md->n - start) / md->params.fs));
 
-      SU_TRYCATCH(
-          (md->on_chirp) (
-              md->privdata,
-              start,
-              (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp),
-              grow_buf_get_size(&md->chirp) / sizeof(SUCOMPLEX),
-              md->n0_start),
-          return SU_FALSE);
+      info.length = (unsigned int) grow_buf_get_size(&md->chirp) / sizeof(SUCOMPLEX);
+      info.t0     = (md->n - info.length) / md->params.fs;
+      info.t0f    = SU_ASFLOAT((md->n - info.length) % md->params.fs) / md->params.fs;
+
+      info.x      = (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp);
+      info.q      = (const SUFLOAT *) grow_buf_get_buffer(&md->q);
+      info.p_n    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_n_buf);
+
+      info.fs     = md->params.fs;
+      info.rbw    = md->ratio;
+
+      SU_TRYCATCH((md->on_chirp) (md->privdata, &info), return SU_FALSE);
 
 #ifdef DEBUG
       printf(
@@ -105,12 +111,18 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
       SU_TRYCATCH(
           grow_buf_append(&md->chirp, &y, sizeof(SUCOMPLEX)) != -1,
           return SU_FALSE);
+      SU_TRYCATCH(
+          grow_buf_append(&md->q, &Q, sizeof(SUFLOAT)) != -1,
+          return SU_FALSE);
+      SU_TRYCATCH(
+          grow_buf_append(&md->p_n_buf, &md->p_n, sizeof(SUFLOAT)) != -1,
+          return SU_FALSE);
+
     }
   } else {
     if (energy >= md->energy_thres) {
       /* DETECTED: CHIRP START */
       md->in_chirp = SU_TRUE;
-      md->n0_start = md->n0;
 
       /* Save all samples in the delay line to the grow buffer */
       grow_buf_shrink(&md->chirp);
@@ -119,6 +131,18 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
             grow_buf_append(
                 &md->chirp,
                 md->samp_hist + (i + md->p) % md->hist_len,
+                sizeof(SUCOMPLEX)) != -1,
+            return SU_FALSE);
+        SU_TRYCATCH(
+            grow_buf_append(
+                &md->q,
+                md->q_hist + (i + md->p) % md->hist_len,
+                sizeof(SUCOMPLEX)) != -1,
+            return SU_FALSE);
+        SU_TRYCATCH(
+            grow_buf_append(
+                &md->p_n_buf,
+                md->p_n_hist + (i + md->p) % md->hist_len,
                 sizeof(SUCOMPLEX)) != -1,
             return SU_FALSE);
       }
@@ -205,11 +229,15 @@ graves_det_new(
   new->energy_thres = params->threshold * new->ratio * new->hist_len;
 
   SU_TRYCATCH(
-      new->snr_hist   = calloc(sizeof(SUFLOAT), new->hist_len),
+      new->q_hist   = calloc(sizeof(SUFLOAT), new->hist_len),
       goto fail);
 
   SU_TRYCATCH(
       new->samp_hist = calloc(sizeof(SUCOMPLEX), new->hist_len),
+      goto fail);
+
+  SU_TRYCATCH(
+      new->p_n_hist = calloc(sizeof(SUFLOAT), new->hist_len),
       goto fail);
 
   return new;
