@@ -94,7 +94,8 @@ struct graves_det {
   su_iir_filt_t lpf1; /* Low pass filter 1. Used to detect noise power */
   su_iir_filt_t lpf2; /* Low pass filter 2. Used to isolate chirps */
   su_ncqo_t lo;
-  SUFLOAT alpha;
+  SUFLOAT alpha; /* Slow decay, used to detect chirps */
+  SUFLOAT last_good_q;
   SUFLOAT p_w; /* Wide channel power */
   SUFLOAT p_n; /* Narrow channel power */
 

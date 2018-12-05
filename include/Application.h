@@ -116,8 +116,10 @@ namespace QStones {
     CPlotter *plotter; // Deleted by parent
     QChart *chirpChart;
     QChart *dopplerChart;
+    QChart *snrChart;
     QChartView *chirpView;
     QChartView *dopplerView;
+    QChartView *snrView;
 
     void setProfile(Suscan::Source::Config);
     void connectAll(void);

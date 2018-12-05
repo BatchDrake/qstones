@@ -248,6 +248,30 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
   this->dopplerChart->axisY()->setMin(-SU_ABS(2 * chirp.meanDoppler));
   this->dopplerChart->axisY()->setMax(SU_ABS(2 * chirp.meanDoppler));
 
+  // Paint SNR
+  this->snrChart->removeAllSeries();
+  n = 0;
+  limits = 0;
+  series = new QLineSeries(this->snrChart);
+  for (auto &p : chirp.snr) {
+    series->append(
+          qreal(n++) / qreal(this->currSampleRate), // FIXME
+          qreal(p));
+    if (p > limits)
+      limits = p;
+  }
+
+  if (limits > 20)
+    limits = 20;
+
+  series->setColor(QColor(100, 255, 100));
+  series->setName("SNR");
+  this->snrChart->addSeries(series);
+  this->snrChart->createDefaultAxes();
+  this->snrChart->axisX()->setTitleText("Time (s)");
+  this->snrChart->axisY()->setTitleText("P(S) / P(N)");
+  this->snrChart->axisY()->setMin(0);
+  this->snrChart->axisY()->setMax(limits);
 }
 
 Application::Application(QWidget *parent) : QMainWindow(parent)
@@ -291,6 +315,19 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   layout->setSpacing(6);
   layout->setContentsMargins(11, 11, 11, 11);
   layout->addWidget(this->dopplerView, 0, 0, 0, 0);
+
+  // Add SNR chart
+  this->snrChart = new QChart();
+  this->snrChart->setTitle("SNR over time");
+  this->snrChart->legend()->hide();
+  this->snrChart->setTheme(QChart::ChartThemeDark);
+  this->snrView = new QChartView(this->snrChart);
+  this->snrView->setRenderHint(QPainter::Antialiasing);
+
+  layout = new QGridLayout(this->ui->snrFrame);
+  layout->setSpacing(6);
+  layout->setContentsMargins(11, 11, 11, 11);
+  layout->addWidget(this->snrView, 0, 0, 0, 0);
 
   // Setup UI state
   this->setUIState(HALTED);

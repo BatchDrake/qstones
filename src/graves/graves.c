@@ -66,8 +66,10 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
   /* Compute power quotient */
   Q = md->p_n / md->p_w;
 
-  if (Q > 1)
-    SU_WARNING("Q too high!\n");
+  if (Q >= 1)
+    Q = md->last_good_q;
+  else
+    md->last_good_q = Q;
 
   /* Update histories */
   md->p_n_hist[md->p]  = md->p_n;
@@ -221,7 +223,7 @@ graves_det_new(
   SU_TRYCATCH(
       su_iir_bwlpf_init(
           &new->lpf1,
-          5,
+          4,
           SU_ABS2NORM_FREQ(params->fs, params->lpf1)),
       goto fail);
 
