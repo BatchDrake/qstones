@@ -261,8 +261,8 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
       limits = p;
   }
 
-  if (limits > 20)
-    limits = 20;
+  if (limits > QSTONES_MAX_SNR)
+    limits = QSTONES_MAX_SNR;
 
   series->setColor(QColor(100, 255, 100));
   series->setName("SNR");
@@ -497,7 +497,7 @@ Application::startCapture(void)
       // Set filter cutoffs
       lpf1 = SU_NORM2ABS_FREQ(
             this->currProfile.getSampleRate(),
-            6 * GRAVES_MIN_LPF_CUTOFF);
+            10 * GRAVES_MIN_LPF_CUTOFF);
 
       lpf2 = SU_NORM2ABS_FREQ(
             this->currProfile.getSampleRate(),

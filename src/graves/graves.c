@@ -33,6 +33,9 @@ graves_det_destroy(graves_det_t *detect)
   if (detect->p_n_hist != NULL)
     free(detect->p_n_hist);
 
+  if (detect->p_w_hist != NULL)
+    free(detect->p_w_hist);
+
   if (detect->samp_hist != NULL)
     free(detect->samp_hist);
 
@@ -42,8 +45,45 @@ graves_det_destroy(graves_det_t *detect)
   grow_buf_clear(&detect->chirp);
   grow_buf_clear(&detect->q);
   grow_buf_clear(&detect->p_n_buf);
+  grow_buf_clear(&detect->p_w_buf);
 
   free(detect);
+}
+
+SUPRIVATE void
+graves_det_filt_back(graves_det_t *md)
+{
+  int i;
+  int shift = SU_SQRT2 * (int) md->hist_len;
+  int len =
+      (int) grow_buf_get_size(&md->p_n_buf)
+       / sizeof (SUFLOAT);
+  SUFLOAT *p_n_ptr = grow_buf_get_buffer(&md->p_n_buf);
+  SUFLOAT *p_w_ptr = grow_buf_get_buffer(&md->p_w_buf);
+  SUFLOAT *q_ptr;
+  SUFLOAT  p_n = md->p_n;
+  SUFLOAT  p_w = md->p_w;
+  SUFLOAT  Q;
+
+  grow_buf_alloc(&md->q, (unsigned) len * sizeof (SUFLOAT));
+  q_ptr = grow_buf_get_buffer(&md->q);
+  memset(q_ptr, 0, (unsigned) len * sizeof (SUFLOAT));
+
+  /* Apply filters in reverse order */
+  for (i = len - 1; i >= 0; --i) {
+    p_w += md->alpha * (p_w_ptr[i] - p_w);
+    p_n += md->alpha * (p_n_ptr[i] - p_n);
+
+    Q = p_n / p_w;
+
+    if (Q >= SU_ADDSFX(1.) || Q < md->ratio)
+      Q = md->last_good_q;
+    else
+      md->last_good_q = Q;
+
+    if (i >= shift)
+      q_ptr[i - shift] = Q;
+  }
 }
 
 SUBOOL
@@ -66,13 +106,14 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
   /* Compute power quotient */
   Q = md->p_n / md->p_w;
 
-  if (Q >= 1)
+  if (Q >= 1 || Q < md->ratio)
     Q = md->last_good_q;
   else
     md->last_good_q = Q;
 
   /* Update histories */
   md->p_n_hist[md->p]  = md->p_n;
+  md->p_w_hist[md->p]  = md->p_w;
   md->q_hist[md->p]    = Q;
   md->samp_hist[md->p] = y;
 
@@ -91,6 +132,8 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
     if (energy < md->energy_thres) {
       /* DETECTED: CHIRP END */
       md->in_chirp = SU_FALSE;
+
+      graves_det_filt_back(md);
 
       info.length = (unsigned int) grow_buf_get_size(&md->chirp) / sizeof(SUCOMPLEX);
       info.t0     = (md->n - info.length) / md->params.fs;
@@ -118,12 +161,11 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
           grow_buf_append(&md->chirp, &y, sizeof(SUCOMPLEX)) != -1,
           return SU_FALSE);
       SU_TRYCATCH(
-          grow_buf_append(&md->q, &Q, sizeof(SUFLOAT)) != -1,
-          return SU_FALSE);
-      SU_TRYCATCH(
           grow_buf_append(&md->p_n_buf, &md->p_n, sizeof(SUFLOAT)) != -1,
           return SU_FALSE);
-
+      SU_TRYCATCH(
+          grow_buf_append(&md->p_w_buf, &md->p_w, sizeof(SUFLOAT)) != -1,
+          return SU_FALSE);
     }
   } else {
     if (energy >= md->energy_thres) {
@@ -134,6 +176,7 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
       grow_buf_shrink(&md->chirp);
       grow_buf_shrink(&md->q);
       grow_buf_shrink(&md->p_n_buf);
+      grow_buf_shrink(&md->p_w_buf);
 
       for (i = 0; i < md->hist_len; ++i) {
         SU_TRYCATCH(
@@ -144,14 +187,14 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
             return SU_FALSE);
         SU_TRYCATCH(
             grow_buf_append(
-                &md->q,
-                md->q_hist + (i + md->p) % md->hist_len,
+                &md->p_n_buf,
+                md->p_n_hist + (i + md->p) % md->hist_len,
                 sizeof(SUCOMPLEX)) != -1,
             return SU_FALSE);
         SU_TRYCATCH(
             grow_buf_append(
-                &md->p_n_buf,
-                md->p_n_hist + (i + md->p) % md->hist_len,
+                &md->p_w_buf,
+                md->p_w_hist + (i + md->p) % md->hist_len,
                 sizeof(SUCOMPLEX)) != -1,
             return SU_FALSE);
       }
@@ -249,6 +292,9 @@ graves_det_new(
       new->p_n_hist = calloc(sizeof(SUFLOAT), new->hist_len),
       goto fail);
 
+  SU_TRYCATCH(
+      new->p_w_hist = calloc(sizeof(SUFLOAT), new->hist_len),
+      goto fail);
   return new;
 
 fail:

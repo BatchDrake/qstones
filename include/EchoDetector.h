@@ -27,6 +27,8 @@
 
 #include <graves/graves.h>
 
+#define QSTONES_MAX_SNR SU_ADDSFX(100.)
+
 namespace QStones {
   class EchoDetector: public QObject {
     Q_OBJECT

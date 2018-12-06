@@ -131,6 +131,9 @@ EchoDetector::Chirp::Chirp(const struct graves_chirp_info *info)
     // We compute the SNR here directly
     this->snr[i] = graves_det_q_to_snr(this->Rbw, info->q[i]);
 
+    if (this->snr[i] > QSTONES_MAX_SNR)
+      this->snr[i] = QSTONES_MAX_SNR;
+
     // Compute noise power
     this->pN[i] =
         this->Rbw * graves_det_get_N0(this->Rbw, info->p_n[i], snr[i]);

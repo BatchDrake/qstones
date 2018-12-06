@@ -102,6 +102,7 @@ struct graves_det {
   SUSCOUNT hist_len;
   SUSCOUNT p;
   SUFLOAT   *p_n_hist;
+  SUFLOAT   *p_w_hist;
   SUFLOAT   *q_hist;
   SUCOMPLEX *samp_hist;
 
@@ -111,6 +112,7 @@ struct graves_det {
   grow_buf_t chirp;
   grow_buf_t q;
   grow_buf_t p_n_buf;
+  grow_buf_t p_w_buf;
 
   void *privdata;
 
