@@ -46,6 +46,9 @@
 #define QSTONES_FFT_WINDOW_SIZE    2048
 #define QSTONES_MAX_SAMPLE_RATE    100000
 
+#define QSTONES_CHART_WIDTH        1920
+#define QSTONES_CHART_HEIGHT       1080
+
 QT_CHARTS_USE_NAMESPACE
 
 namespace QStones {
@@ -114,12 +117,14 @@ namespace QStones {
     // Custom widgets
     ChirpModel *chirpModel;
     CPlotter *plotter; // Deleted by parent
+
     QChart *chirpChart;
     QChart *dopplerChart;
-    QChart *snrChart;
+    QChart *pwpChart;
+
     QChartView *chirpView;
     QChartView *dopplerView;
-    QChartView *snrView;
+    QChartView *pwpView;
 
     void setProfile(Suscan::Source::Config);
     void connectAll(void);
@@ -129,12 +134,16 @@ namespace QStones {
     void syncPlotter(void);
     void setSampleRate(unsigned int rate);
     void updateChirpCharts(const EchoDetector::Chirp &);
+    void refreshCurrentPlots(void);
+
+    static bool saveChartView(QChartView *, const QString &);
 
     friend class ChirpModel;
 
   public:
     static void flushLog(void);
     static QString getLogText(void);
+
     void run(void);
 
     void startCapture(void);
@@ -172,6 +181,9 @@ namespace QStones {
     void onChirp(const QStones::EchoDetector::Chirp &);
     void onChirpSelected(const QItemSelection &, const QItemSelection &);
     void onClearEventTable(void);
+    void onSaveDopplerPlot(void);
+    void onSaveChirpPlot(void);
+    void onSavePowerPlot(void);
   };
 };
 

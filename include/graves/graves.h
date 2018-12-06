@@ -64,6 +64,9 @@ struct graves_chirp_info {
 
   /* Narrow channel power data */
   const SUFLOAT   *p_n;
+
+  /* Wide channel power data */
+  const SUFLOAT   *p_w;
 };
 
 typedef SUBOOL (*graves_chirp_cb_t) (

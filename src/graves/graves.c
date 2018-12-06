@@ -53,11 +53,13 @@ graves_det_destroy(graves_det_t *detect)
 SUPRIVATE void
 graves_det_filt_back(graves_det_t *md)
 {
+  /*
+   * This shift value is purely experimental and
+   * should be mathematically analyzed.
+   */
   int i;
-  int shift = SU_SQRT2 * (int) md->hist_len;
-  int len =
-      (int) grow_buf_get_size(&md->p_n_buf)
-       / sizeof (SUFLOAT);
+  int shift = (int) (SU_SQRT2 * md->hist_len);
+  int len = (int) (grow_buf_get_size(&md->p_n_buf) / sizeof (SUFLOAT));
   SUFLOAT *p_n_ptr = grow_buf_get_buffer(&md->p_n_buf);
   SUFLOAT *p_w_ptr = grow_buf_get_buffer(&md->p_w_buf);
   SUFLOAT *q_ptr;
@@ -141,6 +143,7 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
       info.x      = (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp);
       info.q      = (const SUFLOAT *) grow_buf_get_buffer(&md->q);
       info.p_n    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_n_buf);
+      info.p_w    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_w_buf);
 
       info.fs     = md->params.fs;
       info.rbw    = md->ratio;

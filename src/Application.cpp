@@ -21,10 +21,31 @@
 
 #include <Suscan/Library.h>
 
+#include <QFileDialog>
+#include <QOpenGLWidget>
 #include <QMessageBox>
 #include "Application.h"
 
 using namespace QStones;
+
+bool
+Application::saveChartView(QChartView *chartView, const QString &path)
+{
+  QPixmap p = chartView->grab();
+  QOpenGLWidget *glWidget  = chartView->findChild<QOpenGLWidget*>();
+
+  if (glWidget){
+      QPainter painter(&p);
+      QPoint d =
+             glWidget->mapToGlobal(QPoint())
+          - chartView->mapToGlobal(QPoint());
+      painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+      painter.drawImage(d, glWidget->grabFramebuffer());
+      painter.end();
+  }
+
+  return p.save(path, "PNG");
+}
 
 void
 Application::flushLog(void)
@@ -172,6 +193,23 @@ Application::connectAll(void)
         this,
         SLOT(onClearEventTable(void)));
 
+  connect(
+        this->ui->pbSaveChirpPlot,
+        SIGNAL(clicked(bool)),
+        this,
+        SLOT(onSaveChirpPlot(void)));
+
+  connect(
+        this->ui->pbSaveDopplerPlot,
+        SIGNAL(clicked(bool)),
+        this,
+        SLOT(onSaveDopplerPlot(void)));
+
+  connect(
+        this->ui->pbSavePowerPlot,
+        SIGNAL(clicked(bool)),
+        this,
+        SLOT(onSavePowerPlot(void)));
 }
 
 void
@@ -248,12 +286,14 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
   this->dopplerChart->axisY()->setMin(-SU_ABS(2 * chirp.meanDoppler));
   this->dopplerChart->axisY()->setMax(SU_ABS(2 * chirp.meanDoppler));
 
-  // Paint SNR
-  this->snrChart->removeAllSeries();
-  n = 0;
+  // Paint power plot
+  this->pwpChart->removeAllSeries();
+
+  // Paint narrow channel
   limits = 0;
-  series = new QLineSeries(this->snrChart);
-  for (auto &p : chirp.snr) {
+  n = 0;
+  series = new QLineSeries(this->pwpChart);
+  for (auto &p : chirp.pN) {
     series->append(
           qreal(n++) / qreal(this->currSampleRate), // FIXME
           qreal(p));
@@ -261,17 +301,28 @@ Application::updateChirpCharts(const EchoDetector::Chirp &chirp)
       limits = p;
   }
 
-  if (limits > QSTONES_MAX_SNR)
-    limits = QSTONES_MAX_SNR;
-
   series->setColor(QColor(100, 255, 100));
-  series->setName("SNR");
-  this->snrChart->addSeries(series);
-  this->snrChart->createDefaultAxes();
-  this->snrChart->axisX()->setTitleText("Time (s)");
-  this->snrChart->axisY()->setTitleText("P(S) / P(N)");
-  this->snrChart->axisY()->setMin(0);
-  this->snrChart->axisY()->setMax(limits);
+  series->setName("Narrow Channel");
+  this->pwpChart->addSeries(series);
+
+  // Paint wide channel
+  n = 0;
+  series = new QLineSeries(this->pwpChart);
+  for (auto &p : chirp.pW) {
+    series->append(
+          qreal(n++) / qreal(this->currSampleRate), // FIXME
+          qreal(p));
+    if (p > limits)
+      limits = p;
+  }
+
+  series->setColor(QColor(180, 100, 255));
+  series->setName("Wide Channel");
+  this->pwpChart->addSeries(series);
+
+  this->pwpChart->createDefaultAxes();
+  this->pwpChart->axisX()->setTitleText("Time (s)");
+  this->pwpChart->axisY()->setTitleText("Power (full scale)");
 }
 
 Application::Application(QWidget *parent) : QMainWindow(parent)
@@ -295,7 +346,7 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   this->chirpChart = new QChart();
   this->chirpChart->setTitle("Chirp signal over time");
   this->chirpChart->setTheme(QChart::ChartThemeDark);
-  this->chirpView = new QChartView(this->chirpChart);
+  this->chirpView = new QChartView(this->chirpChart, this);
   this->chirpView->setRenderHint(QPainter::Antialiasing);
 
   layout = new QGridLayout(this->ui->chirpFrame);
@@ -308,7 +359,7 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   this->dopplerChart->setTitle("Doppler shift over time");
   this->dopplerChart->legend()->hide();
   this->dopplerChart->setTheme(QChart::ChartThemeDark);
-  this->dopplerView = new QChartView(this->dopplerChart);
+  this->dopplerView = new QChartView(this->dopplerChart, this);
   this->dopplerView->setRenderHint(QPainter::Antialiasing);
 
   layout = new QGridLayout(this->ui->dopplerFrame);
@@ -317,17 +368,16 @@ Application::Application(QWidget *parent) : QMainWindow(parent)
   layout->addWidget(this->dopplerView, 0, 0, 0, 0);
 
   // Add SNR chart
-  this->snrChart = new QChart();
-  this->snrChart->setTitle("SNR over time");
-  this->snrChart->legend()->hide();
-  this->snrChart->setTheme(QChart::ChartThemeDark);
-  this->snrView = new QChartView(this->snrChart);
-  this->snrView->setRenderHint(QPainter::Antialiasing);
+  this->pwpChart = new QChart();
+  this->pwpChart->setTitle("Signal power per channel");
+  this->pwpChart->setTheme(QChart::ChartThemeDark);
+  this->pwpView = new QChartView(this->pwpChart, this);
+  this->pwpView->setRenderHint(QPainter::Antialiasing);
 
-  layout = new QGridLayout(this->ui->snrFrame);
+  layout = new QGridLayout(this->ui->pwpFrame);
   layout->setSpacing(6);
   layout->setContentsMargins(11, 11, 11, 11);
-  layout->addWidget(this->snrView, 0, 0, 0, 0);
+  layout->addWidget(this->pwpView, 0, 0, 0, 0);
 
   // Setup UI state
   this->setUIState(HALTED);
@@ -812,7 +862,7 @@ Application::onChirp(const EchoDetector::Chirp &chirp)
 }
 
 void
-Application::onChirpSelected(const QItemSelection &, const QItemSelection &)
+Application::refreshCurrentPlots(void)
 {
   QModelIndexList selected =
       this->ui->eventTable->selectionModel()->selectedRows();
@@ -823,6 +873,12 @@ Application::onChirpSelected(const QItemSelection &, const QItemSelection &)
           static_cast<unsigned long>(selected.at(0).row()));
     this->updateChirpCharts(chirp);
   }
+}
+
+void
+Application::onChirpSelected(const QItemSelection &, const QItemSelection &)
+{
+  this->refreshCurrentPlots();
 }
 
 void
@@ -851,6 +907,66 @@ Application::onClearEventTable(void)
 
     if (reply == QMessageBox::Yes)
       this->chirpModel->clear();
+  }
+}
+
+void
+Application::onSaveDopplerPlot(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save Doppler plot",
+      "",
+      "PNG image (*.png);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChartView(this->dopplerView, fileName)) {
+      QMessageBox::critical(
+            this,
+            "Save Doppler plot",
+            "Failed to save plot in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
+  }
+}
+
+void
+Application::onSaveChirpPlot(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save Chirp plot",
+      "",
+      "PNG image (*.png);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChartView(this->chirpView, fileName)) {
+      QMessageBox::critical(
+            this,
+            "Save Chirp plot",
+            "Failed to save plot in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
+  }
+}
+
+void
+Application::onSavePowerPlot(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save Power plot",
+      "",
+      "PNG image (*.png);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChartView(this->pwpView, fileName)) {
+      QMessageBox::critical(
+            this,
+            "Save Power plot",
+            "Failed to save plot in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
   }
 }
 

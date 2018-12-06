@@ -73,6 +73,7 @@ namespace QStones {
 
     std::vector<SUCOMPLEX> samples;
     std::vector<SUFLOAT> pN; // Noise power in the narrow channel
+    std::vector<SUFLOAT> pW; // Noise power in the wide channel
     std::vector<SUFLOAT> snr;
 
     // Processed members

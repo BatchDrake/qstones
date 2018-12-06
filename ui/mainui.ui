@@ -60,43 +60,8 @@
              <enum>Qt::LeftToRight</enum>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>2</number>
             </property>
-            <widget class="QWidget" name="tab">
-             <attribute name="title">
-              <string>Summary</string>
-             </attribute>
-             <layout class="QFormLayout" name="formLayout_2">
-              <item row="0" column="0">
-               <widget class="QLabel" name="label">
-                <property name="text">
-                 <string>Captured at</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="label_2">
-                <property name="text">
-                 <string>---</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="label_3">
-                <property name="text">
-                 <string>Duration</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLabel" name="label_4">
-                <property name="text">
-                 <string>---</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
             <widget class="QWidget" name="tab_2">
              <attribute name="title">
               <string>Chirp (I/Q)</string>
@@ -113,7 +78,7 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QPushButton" name="pushButton">
+               <widget class="QPushButton" name="pbSaveChirp">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -128,9 +93,9 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QPushButton" name="pushButton_2">
+               <widget class="QPushButton" name="pbSaveChirpPlot">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="text">
                  <string>Save plot</string>
@@ -150,7 +115,7 @@
              </attribute>
              <layout class="QGridLayout" name="gridLayout_4">
               <item row="1" column="0">
-               <widget class="QPushButton" name="pushButton_3">
+               <widget class="QPushButton" name="pbSaveDoppler">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -165,9 +130,9 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QPushButton" name="pushButton_4">
+               <widget class="QPushButton" name="pbSaveDopplerPlot">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="text">
                  <string>Save plot</string>
@@ -193,11 +158,11 @@
             </widget>
             <widget class="QWidget" name="tab_4">
              <attribute name="title">
-              <string>SNR</string>
+              <string>Power plot</string>
              </attribute>
              <layout class="QGridLayout" name="gridLayout_6">
               <item row="0" column="0" colspan="3">
-               <widget class="QFrame" name="snrFrame">
+               <widget class="QFrame" name="pwpFrame">
                 <property name="frameShape">
                  <enum>QFrame::StyledPanel</enum>
                 </property>
@@ -207,7 +172,7 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QPushButton" name="pushButton_6">
+               <widget class="QPushButton" name="pbSavePower">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -222,9 +187,9 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QPushButton" name="pushButton_5">
+               <widget class="QPushButton" name="pbSavePowerPlot">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="text">
                  <string>Save plot</string>

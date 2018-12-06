@@ -92,6 +92,7 @@ copyToChirp(EchoDetector::Chirp *dest, const EchoDetector::Chirp &prev)
   dest->samples    = prev.samples;
   dest->snr        = prev.snr;
   dest->pN         = prev.pN;
+  dest->pW         = prev.pW;
 
   if (dest->processed) {
     dest->doppler     = prev.doppler;
@@ -105,6 +106,7 @@ moveToChirp(EchoDetector::Chirp *dest, EchoDetector::Chirp &&prev)
   dest->samples    = std::move(prev.samples);
   dest->snr        = std::move(prev.snr);
   dest->pN         = std::move(prev.pN);
+  dest->pW         = std::move(prev.pW);
 
   if (dest->processed) {
     dest->doppler     = std::move(prev.doppler);
@@ -123,9 +125,9 @@ EchoDetector::Chirp::Chirp(const struct graves_chirp_info *info)
   this->fs           = info->fs;
 
   this->samples.assign(info->x, info->x + info->length);
+  this->pN.assign(info->p_n, info->p_n + info->length);
+  this->pW.assign(info->p_w, info->p_w + info->length);
   this->snr.resize(info->length);
-  this->pN.resize(info->length);
-
 
   for (i = 0; i < info->length; ++i) {
     // We compute the SNR here directly
@@ -133,11 +135,6 @@ EchoDetector::Chirp::Chirp(const struct graves_chirp_info *info)
 
     if (this->snr[i] > QSTONES_MAX_SNR)
       this->snr[i] = QSTONES_MAX_SNR;
-
-    // Compute noise power
-    this->pN[i] =
-        this->Rbw * graves_det_get_N0(this->Rbw, info->p_n[i], snr[i]);
-
   }
 }
 
@@ -218,10 +215,7 @@ EchoDetector::EchoDetector(
 }
 
 EchoDetector::EchoDetector(QObject *parent, SUSCOUNT fs, SUFLOAT fc) :
-  EchoDetector(parent, fs, fc, 300, 50)
-{
-
-}
+  EchoDetector(parent, fs, fc, 300, 50) { }
 
 void
 EchoDetector::feed(const SUCOMPLEX *samples, SUSCOUNT len)
