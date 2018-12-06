@@ -108,6 +108,7 @@ namespace QStones {
     State state;
     bool firstPSDrecv = false;
     unsigned int currSampleRate;
+    const EchoDetector::Chirp *currChirp = nullptr;
     struct ApplicationProperties prop;
 
     // UI
@@ -134,9 +135,13 @@ namespace QStones {
     void syncPlotter(void);
     void setSampleRate(unsigned int rate);
     void updateChirpCharts(const EchoDetector::Chirp &);
-    void refreshCurrentPlots(void);
+    void refreshSelection(void);
 
     static bool saveChartView(QChartView *, const QString &);
+    static bool saveChirpData(
+        const EchoDetector::Chirp *,
+        const QString &,
+        int what);
 
     friend class ChirpModel;
 
@@ -184,6 +189,10 @@ namespace QStones {
     void onSaveDopplerPlot(void);
     void onSaveChirpPlot(void);
     void onSavePowerPlot(void);
+    void onSaveDoppler(void);
+    void onSaveChirp(void);
+    void onSavePower(void);
+    void onSaveFullChirpData(void);
   };
 };
 

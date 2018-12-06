@@ -26,6 +26,8 @@
 #include <QMessageBox>
 #include "Application.h"
 
+#include <fstream>
+
 using namespace QStones;
 
 bool
@@ -45,6 +47,24 @@ Application::saveChartView(QChartView *chartView, const QString &path)
   }
 
   return p.save(path, "PNG");
+}
+
+bool
+Application::saveChirpData(
+    const EchoDetector::Chirp *chirp,
+    const QString &str,
+    int what)
+{
+  std::ofstream fs;
+  bool ok;
+
+  fs.open(str.toStdString().c_str());
+  ok = fs.is_open();
+
+  if (ok)
+    fs << chirp->serialize(what);
+
+  return ok;
 }
 
 void
@@ -210,6 +230,30 @@ Application::connectAll(void)
         SIGNAL(clicked(bool)),
         this,
         SLOT(onSavePowerPlot(void)));
+
+  connect(
+        this->ui->pbSaveChirp,
+        SIGNAL(clicked(bool)),
+        this,
+        SLOT(onSaveChirp(void)));
+
+  connect(
+        this->ui->pbSaveDoppler,
+        SIGNAL(clicked(bool)),
+        this,
+        SLOT(onSaveDoppler(void)));
+
+  connect(
+        this->ui->pbSavePower,
+        SIGNAL(clicked(bool)),
+        this,
+        SLOT(onSavePower(void)));
+
+  connect(
+        this->ui->actionSave,
+        SIGNAL(triggered(bool)),
+        this,
+        SLOT(onSaveFullChirpData(void)));
 }
 
 void
@@ -862,7 +906,7 @@ Application::onChirp(const EchoDetector::Chirp &chirp)
 }
 
 void
-Application::refreshCurrentPlots(void)
+Application::refreshSelection(void)
 {
   QModelIndexList selected =
       this->ui->eventTable->selectionModel()->selectedRows();
@@ -871,14 +915,22 @@ Application::refreshCurrentPlots(void)
     const EchoDetector::Chirp &chirp =
         this->chirpModel->at(
           static_cast<unsigned long>(selected.at(0).row()));
+    this->currChirp = &chirp;
     this->updateChirpCharts(chirp);
+  } else {
+    this->currChirp = nullptr;
   }
+
+  ui->pbSaveChirp->setEnabled(this->currChirp != nullptr);
+  ui->pbSaveDoppler->setEnabled(this->currChirp != nullptr);
+  ui->pbSavePower->setEnabled(this->currChirp != nullptr);
+  ui->actionSave->setEnabled(this->currChirp != nullptr);
 }
 
 void
 Application::onChirpSelected(const QItemSelection &, const QItemSelection &)
 {
-  this->refreshCurrentPlots();
+  this->refreshSelection();
 }
 
 void
@@ -905,8 +957,10 @@ Application::onClearEventTable(void)
           + "Are you sure?",
           QMessageBox::Yes | QMessageBox::No);
 
-    if (reply == QMessageBox::Yes)
+    if (reply == QMessageBox::Yes) {
       this->chirpModel->clear();
+      this->refreshSelection();
+    }
   }
 }
 
@@ -965,6 +1019,107 @@ Application::onSavePowerPlot(void)
             this,
             "Save Power plot",
             "Failed to save plot in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
+  }
+}
+
+void
+Application::onSaveDoppler(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save Doppler data",
+      "",
+      "MATLAB / Octave files (*.m);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChirpData(
+          this->currChirp,
+          fileName,
+          EchoDetector::Chirp::SCALARS
+          | EchoDetector::Chirp::DOPPLER)) {
+      QMessageBox::critical(
+            this,
+            "Save Doppler data",
+            "Failed to save data in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
+  }
+}
+
+void
+Application::onSaveChirp(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save chirp samples",
+      "",
+      "MATLAB / Octave files (*.m);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChirpData(
+          this->currChirp,
+          fileName,
+          EchoDetector::Chirp::SCALARS
+          | EchoDetector::Chirp::SAMPLES)) {
+      QMessageBox::critical(
+            this,
+            "Save chirp samples",
+            "Failed to save data in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
+  }
+}
+
+void
+Application::onSavePower(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save power data",
+      "",
+      "MATLAB / Octave files (*.m);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChirpData(
+          this->currChirp,
+          fileName,
+          EchoDetector::Chirp::SCALARS
+          | EchoDetector::Chirp::POWER_NARROW
+          | EchoDetector::Chirp::POWER_WIDE)) {
+      QMessageBox::critical(
+            this,
+            "Save power data",
+            "Failed to save data in the specified location. Please try again.",
+            QMessageBox::Ok);
+    }
+  }
+}
+
+void
+Application::onSaveFullChirpData(void)
+{
+  QString fileName = QFileDialog::getSaveFileName(
+      this,
+      "Save full chirp data",
+      "",
+      "MATLAB / Octave files (*.m);;All Files (*)");
+
+  if (!fileName.isEmpty()) {
+    if (!saveChirpData(
+          this->currChirp,
+          fileName,
+          EchoDetector::Chirp::SCALARS
+          | EchoDetector::Chirp::SAMPLES
+          | EchoDetector::Chirp::DOPPLER
+          | EchoDetector::Chirp::SNR
+          | EchoDetector::Chirp::POWER_NARROW
+          | EchoDetector::Chirp::POWER_WIDE)) {
+      QMessageBox::critical(
+            this,
+            "Save full chirp data",
+            "Failed to save data in the specified location. Please try again.",
             QMessageBox::Ok);
     }
   }

@@ -65,6 +65,16 @@ namespace QStones {
 
   // TODO: ADD SAMPLE RATE!!!!
   struct EchoDetector::Chirp {
+    enum MemberType {
+      SCALARS = 1,
+      SAMPLES = 2,
+      POWER_NARROW = 4,
+      POWER_WIDE = 8,
+      SNR = 16,
+      DOPPLER = 32,
+      SOFT_DOPPLER = 64
+    };
+
     SUSCOUNT start;
     SUFLOAT  startDecimal;
 
@@ -88,6 +98,8 @@ namespace QStones {
 
     // Methods
     void process(void);
+
+    std::string serialize(int what) const;
 
     // Constructors
     Chirp(const struct graves_chirp_info *info);

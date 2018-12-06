@@ -53,38 +53,34 @@ graves_det_destroy(graves_det_t *detect)
 SUPRIVATE void
 graves_det_filt_back(graves_det_t *md)
 {
-  /*
-   * This shift value is purely experimental and
-   * should be mathematically analyzed.
-   */
   int i;
-  int shift = (int) (SU_SQRT2 * md->hist_len);
+  int shift = (int) md->hist_len;
   int len = (int) (grow_buf_get_size(&md->p_n_buf) / sizeof (SUFLOAT));
   SUFLOAT *p_n_ptr = grow_buf_get_buffer(&md->p_n_buf);
   SUFLOAT *p_w_ptr = grow_buf_get_buffer(&md->p_w_buf);
   SUFLOAT *q_ptr;
   SUFLOAT  p_n = md->p_n;
   SUFLOAT  p_w = md->p_w;
-  SUFLOAT  Q;
 
   grow_buf_alloc(&md->q, (unsigned) len * sizeof (SUFLOAT));
   q_ptr = grow_buf_get_buffer(&md->q);
+
   memset(q_ptr, 0, (unsigned) len * sizeof (SUFLOAT));
 
-  /* Apply filters in reverse order */
+  /* Apply filters in reverse order. */
   for (i = len - 1; i >= 0; --i) {
     p_w += md->alpha * (p_w_ptr[i] - p_w);
     p_n += md->alpha * (p_n_ptr[i] - p_n);
 
-    Q = p_n / p_w;
+    p_n_ptr[i] = p_n;
+    p_w_ptr[i] = p_w;
+  }
 
-    if (Q >= SU_ADDSFX(1.) || Q < md->ratio)
-      Q = md->last_good_q;
-    else
-      md->last_good_q = Q;
-
-    if (i >= shift)
-      q_ptr[i - shift] = Q;
+  /* Shift */
+  for (i = 0; i < len - shift; ++i) {
+    p_n_ptr[i] = p_n_ptr[i + shift];
+    p_w_ptr[i] = p_w_ptr[i + shift];
+    q_ptr[i]   = p_n_ptr[i] / p_w_ptr[i];
   }
 }
 
@@ -138,18 +134,21 @@ graves_det_feed(graves_det_t *md, SUCOMPLEX x)
       graves_det_filt_back(md);
 
       info.length = (unsigned int) grow_buf_get_size(&md->chirp) / sizeof(SUCOMPLEX);
-      info.t0     = (md->n - info.length) / md->params.fs;
-      info.t0f    = SU_ASFLOAT((md->n - info.length) % md->params.fs) / md->params.fs;
-      info.x      = (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp);
-      info.q      = (const SUFLOAT *) grow_buf_get_buffer(&md->q);
-      info.p_n    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_n_buf);
-      info.p_w    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_w_buf);
+      info.length -= md->hist_len;
 
-      info.fs     = md->params.fs;
-      info.rbw    = md->ratio;
+      if (info.length > 0) {
+        info.t0     = (md->n - info.length) / md->params.fs;
+        info.t0f    = SU_ASFLOAT((md->n - info.length) % md->params.fs) / md->params.fs;
+        info.x      = (const SUCOMPLEX *) grow_buf_get_buffer(&md->chirp);
+        info.q      = (const SUFLOAT *) grow_buf_get_buffer(&md->q);
+        info.p_n    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_n_buf);
+        info.p_w    = (const SUFLOAT *) grow_buf_get_buffer(&md->p_w_buf);
 
-      SU_TRYCATCH((md->on_chirp) (md->privdata, &info), return SU_FALSE);
+        info.fs     = md->params.fs;
+        info.rbw    = md->ratio;
 
+        SU_TRYCATCH((md->on_chirp) (md->privdata, &info), return SU_FALSE);
+      }
 #ifdef DEBUG
       printf(
           "Chirp of length %5d detected (at %02d:%02d:%02d)\n",
