@@ -109,7 +109,7 @@ Analyzer::registerBaseBandFilter(suscan_analyzer_baseband_filter_func_t func, vo
 void
 Analyzer::setFrequency(SUFREQ freq)
 {
-  SU_ATTEMPT(suscan_analyzer_set_freq(this->instance, freq));
+  SU_ATTEMPT(suscan_analyzer_set_freq(this->instance, freq, 0));
 }
 
 SUSCOUNT

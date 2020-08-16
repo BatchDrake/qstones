@@ -157,7 +157,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
 
   this->iqProfile = Suscan::Source::Config(
         SUSCAN_SOURCE_TYPE_FILE,
-        SUSCAN_SOURCE_FORMAT_RAW);
+        SUSCAN_SOURCE_FORMAT_RAW_FLOAT32);
   this->iqProfile.setLabel("I/Q file");
 
   this->setWindowTitle("Signal source configuration");
