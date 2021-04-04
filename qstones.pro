@@ -27,6 +27,12 @@ CONFIG += c++14
 INCLUDEPATH += $$PWD/include
 
 SOURCES += \
+    src/Suscan/AnalyzerParams.cpp \
+    src/Suscan/CancellableTask.cpp \
+    src/Suscan/Config.cpp \
+    src/Suscan/MultitaskController.cpp \
+    src/Suscan/Object.cpp \
+    src/Suscan/Serializable.cpp \
     src/main.cpp \
     src/Suscan/Analyzer.cpp \
     src/Suscan/Exception.cpp \
@@ -50,7 +56,15 @@ SOURCES += \
 
 HEADERS += \
     include/Suscan/Analyzer.h \
+    include/Suscan/AnalyzerParams.h \
+    include/Suscan/CancellableTask.h \
+    include/Suscan/Channel.h \
     include/Suscan/Compat.h \
+    include/Suscan/Config.h \
+    include/Suscan/Estimator.h \
+    include/Suscan/MultitaskController.h \
+    include/Suscan/Object.h \
+    include/Suscan/Serializable.h \
     include/Suscan/Source.h \
     include/Suscan/MQ.h \
     include/Suscan/Library.h \
@@ -64,6 +78,7 @@ HEADERS += \
     include/Suscan/Messages/SamplesMessage.h \
     include/Gqrx/CPlotter.h \
     include/Suscan/Messages/GenericMessage.h \
+    include/Suscan/SpectrumSource.h \
     include/graves/graves.h \
     include/EchoDetector.h \
     include/Suscan/Logger.h

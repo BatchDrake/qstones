@@ -21,16 +21,16 @@
 #ifndef GRAVES_GRAVES_H
 #define GRAVES_GRAVES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <util.h>
 
 #include <sigutils/iir.h>
 #include <sigutils/ncqo.h>
 #include <sigutils/log.h>
 #include <sigutils/sampling.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define GRAVES_CENTER_FREQ SU_ADDSFX(143050000.)
 #define SPEED_OF_LIGHT     SU_ADDSFX(3e8)

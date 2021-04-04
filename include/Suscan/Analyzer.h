@@ -27,6 +27,8 @@
 #include <Suscan/Source.h>
 #include <Suscan/MQ.h>
 #include <Suscan/Message.h>
+#include <Suscan/Channel.h>
+#include <Suscan/AnalyzerParams.h>
 
 #include <Suscan/Messages/ChannelMessage.h>
 #include <Suscan/Messages/InspectorMessage.h>
@@ -43,9 +45,20 @@ namespace Suscan {
 
     class AsyncThread;
 
+  public:
+    enum SweepStrategy {
+      STOCHASTIC = SUSCAN_ANALYZER_SWEEP_STRATEGY_STOCHASTIC,
+      PROGRESSIVE = SUSCAN_ANALYZER_SWEEP_STRATEGY_PROGRESSIVE
+    };
+
+    enum SpectrumPartitioning {
+      DISCRETE   = SUSCAN_ANALYZER_SPECTRUM_PARTITIONING_DISCRETE,
+      CONTINUOUS = SUSCAN_ANALYZER_SPECTRUM_PARTITIONING_CONTINUOUS
+    };
+
   private:
-    suscan_analyzer_t *instance;
-    std::unique_ptr<AsyncThread> asyncThread;
+    suscan_analyzer_t *instance = nullptr;
+    AsyncThread *asyncThread = nullptr;
     MQ mq;
 
     static bool registered;
@@ -53,25 +66,51 @@ namespace Suscan {
 
   signals:
     void psd_message(const Suscan::PSDMessage &message);
+    void inspector_message(const Suscan::InspectorMessage &message);
+    void samples_message(const Suscan::SamplesMessage &message);
     void read_error(void);
     void eos(void);
     void halted(void);
 
   public slots:
-    void captureMessage(const Suscan::Message &message);
+    void captureMessage(quint32 type, void *data);
 
   public:
     SUSCOUNT getSampleRate(void) const;
+    SUSCOUNT getMeasuredSampleRate(void) const;
 
     void *read(uint32_t &type);
     void registerBaseBandFilter(suscan_analyzer_baseband_filter_func_t, void *);
-    void setFrequency(SUFREQ freq);
+    void setFrequency(SUFREQ freq, SUFREQ lnbFreq = 0);
+    void setGain(std::string const &name, SUFLOAT val);
+    void setSweepStrategy(SweepStrategy);
+    void setSpectrumPartitioning(SpectrumPartitioning);
+    void setAntenna(std::string const &name);
+    void setBandwidth(SUFLOAT val);
     void setThrottle(unsigned int throttle);
+    void setParams(AnalyzerParams &params);
+    void setDCRemove(bool remove);
+    void setIQReverse(bool reverse);
+    void setAGC(bool enabled);
+    void setHopRange(SUFREQ min, SUFREQ max);
+    void setBufferingSize(SUSCOUNT len);
     void halt(void);
 
-    Analyzer(
-        struct suscan_analyzer_params const& params,
-        Source::Config const& config);
+    // Analyzer asynchronous requests
+    void open(std::string const &inspClass, Channel const &ch, RequestId id);
+    void openPrecise(std::string const &inspClass, Channel const &ch, RequestId id);
+
+    void setInspectorConfig(Handle handle, Config const &cfg, RequestId id);
+    void setInspectorId(Handle handle, InspectorId id, RequestId req_id);
+    void setInspectorFreq(Handle handle, SUFREQ fc, RequestId req_id);
+    void setInspectorBandwidth(Handle handle, SUFREQ bw, RequestId req_id);
+    void setInspectorWatermark(Handle handle, SUSCOUNT watermark, RequestId id);
+    void setSpectrumSource(Handle handle, unsigned int source, RequestId id);
+    void setInspectorEnabled(Handle handle, EstimatorId eid, bool, RequestId id);
+    void closeInspector(Handle handle, RequestId id);
+
+    // Constructors
+    Analyzer(AnalyzerParams &params, Source::Config const& config);
     ~Analyzer();
   };
 
@@ -88,7 +127,7 @@ namespace Suscan {
     AsyncThread(Analyzer *);
 
   signals:
-    void message(const Suscan::Message &);
+    void message(quint32 type, void *data);
   };
 
 };

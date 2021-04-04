@@ -262,9 +262,10 @@ Application::setProfile(Suscan::Source::Config profile)
   this->currProfile = profile;
   this->setWindowTitle(
         QString::fromStdString(
-          "QStones - " + profile.label() + " - " + std::to_string(profile.getSampleRate())));
+          "QStones - " + this->currProfile.label() + " - " + std::to_string(this->currProfile.getSampleRate())));
 
   this->plotter->setSampleRate(profile.getSampleRate());
+  this->plotter->setFreqUnits(1e3);
   this->setTunerFrequency(profile.getFreq());
 }
 
@@ -464,6 +465,7 @@ Application::setUIState(State state)
 void
 Application::onAnalyzerHalted(void)
 {
+  printf("Analyzer halted\n");
   this->setUIState(HALTED);
   this->analyzer = nullptr;
 }
@@ -471,6 +473,7 @@ Application::onAnalyzerHalted(void)
 void
 Application::onAnalyzerEos(void)
 {
+  printf("Analyzer EOS\n");
   this->setUIState(HALTED);
   this->analyzer = nullptr;
 }
@@ -478,6 +481,7 @@ Application::onAnalyzerEos(void)
 void
 Application::onAnalyzerReadError(void)
 {
+  printf("Analyzer read error\n");
   (void)  QMessageBox::critical(
         this,
         "Source error",
@@ -550,10 +554,10 @@ onBaseBandData(
 void
 Application::startCapture(void)
 {
-  struct suscan_analyzer_params default_params =
-      suscan_analyzer_params_INITIALIZER;
+  Suscan::AnalyzerParams default_params;
 
-  default_params.detector_params.window_size = QSTONES_FFT_WINDOW_SIZE;
+  default_params.windowSize = QSTONES_FFT_WINDOW_SIZE;
+  default_params.mode = Suscan::AnalyzerParams::Mode::CHANNEL;
 
   try {
     if (this->state == HALTED) {
@@ -566,6 +570,9 @@ Application::startCapture(void)
       this->firstPSDrecv = false;
 
       if (this->currProfile.getType() == SUSCAN_SOURCE_TYPE_SDR) {
+        const suscan_source_device_t *dev = this->currProfile.getDevice().getInstance();
+        for (int i = 0; i < dev->args->size; ++i)
+          printf("%s = %s\n", dev->args->keys[i], dev->args->vals[i]);
         this->setThrottleEnabled(false);
         if (this->currProfile.getSampleRate() > QSTONES_MAX_SAMPLE_RATE) {
           QMessageBox::StandardButton reply;
@@ -654,7 +661,7 @@ Application::startCapture(void)
           this,
           "QStones error",
           "Failed to start capture due to errors:<p /><pre>"
-          + getLogText()
+          + getLogText().toHtmlEscaped()
           + "</pre>",
           QMessageBox::Ok);
   }
@@ -1128,6 +1135,7 @@ Application::onSaveFullChirpData(void)
 Application::~Application()
 {
   // Ensure analyzer is properly stopped
+  printf("Analyzer destruction\n");
   this->analyzer = nullptr;
   delete this->ui;
 }

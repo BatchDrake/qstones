@@ -35,8 +35,8 @@ ConfigDialog::populateProfiles(void)
 
   for (auto i = sus->getFirstProfile(); i != sus->getLastProfile(); ++i)
       this->ui->profileCombo->addItem(
-            QString::fromStdString(i->label()),
-            QVariant::fromValue(*i));
+            QString::fromStdString(i->second.label()),
+            QVariant::fromValue(i->second));
 }
 
 void
@@ -99,7 +99,7 @@ ConfigDialog::getProfile(void)
 void
 ConfigDialog::setAudioDevice(const suscan_source_device_t *dev)
 {
-  this->audioProfile.setSDRDevice(dev);
+  this->audioProfile.setDevice(Suscan::Source::Device(dev, 0));
   this->audio_detected = true;
 }
 
@@ -114,10 +114,11 @@ find_audio_device(
 
   if (devstr != nullptr && strcmp(devstr, "audio") == 0) {
     const char *label = SoapySDRKwargs_get(dev->args, "label");
-    if (strcmp(label, "default") == 0) {
-      dialog->setAudioDevice(dev);
+    dialog->setAudioDevice(dev);
+
+    // Default device found. In this case, we assume this is the best device.
+    if (strcmp(label, "default") == 0)
       return SU_FALSE;
-    }
   }
 
   return SU_TRUE;
@@ -157,7 +158,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
 
   this->iqProfile = Suscan::Source::Config(
         SUSCAN_SOURCE_TYPE_FILE,
-        SUSCAN_SOURCE_FORMAT_RAW);
+        SUSCAN_SOURCE_FORMAT_RAW_FLOAT32);
   this->iqProfile.setLabel("I/Q file");
 
   this->setWindowTitle("Signal source configuration");

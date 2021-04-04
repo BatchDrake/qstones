@@ -31,6 +31,7 @@ namespace QStones {
 
   private:
     Suscan::Source::Config audioProfile;
+
     Suscan::Source::Config wavProfile;
     Suscan::Source::Config iqProfile;
     bool audio_detected = false;
@@ -45,7 +46,7 @@ namespace QStones {
     Suscan::Source::Config getProfile(void);
     void setAudioDevice(const suscan_source_device_t *);
     explicit ConfigDialog(QWidget *parent = nullptr);
-    ~ConfigDialog();
+    virtual ~ConfigDialog() override;
 
   public slots:
     void onRadioButtonToggle(bool);

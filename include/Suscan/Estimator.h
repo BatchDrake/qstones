@@ -1,6 +1,6 @@
 //
-//    PSDMessage.h: PSD Message
-//    Copyright (C) 2018 Gonzalo José Carracedo Carballal
+//    Estimator.h: Parameter estimator
+//    Copyright (C) 2019 Gonzalo José Carracedo Carballal
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU Lesser General Public License as
@@ -16,28 +16,20 @@
 //    License along with this program.  If not, see
 //    <http://www.gnu.org/licenses/>
 //
-#ifndef MESSAGES_PSD_MESSAGE_H
-#define MESSAGES_PSD_MESSAGE_H
 
-#include <Suscan/Compat.h>
-#include <Suscan/Message.h>
+#ifndef CPP_ESTIMATOR_H
+#define CPP_ESTIMATOR_H
 
-#include <analyzer/analyzer.h>
+#include <sigutils/softtune.h>
 
 namespace Suscan {
-  class PSDMessage: public Message {
-  private:
-    struct suscan_analyzer_psd_msg *message = nullptr; // Convenience reference
-
-  public:
-    SUSCOUNT size(void) const;
-    SUFREQ getFrequency(void) const;
-    unsigned int getSampleRate(void) const;
-    const SUFLOAT *get(void) const;
-
-    PSDMessage();
-    PSDMessage(struct suscan_analyzer_psd_msg *msg);
+  typedef uint32_t EstimatorId;
+  struct Estimator {
+      std::string name;
+      std::string desc;
+      std::string field;
+      EstimatorId id;
   };
-};
+}
 
-#endif // MESSAGES_PSD_MESSAGE_H
+#endif // CPP_ESTIMATOR_H
