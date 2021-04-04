@@ -45,19 +45,8 @@ Analyzer::AsyncThread::run()
     data = this->owner->read(type);
 
     switch (type) {
-      // Data messages
-      case SUSCAN_ANALYZER_MESSAGE_TYPE_CHANNEL:
-        emit message(ChannelMessage(static_cast<struct suscan_analyzer_channel_msg *>(data)));
-        break;
-
       case SUSCAN_ANALYZER_MESSAGE_TYPE_INSPECTOR:
-        emit message(InspectorMessage(static_cast<struct suscan_analyzer_inspector_msg *>(data)));
-        break;
-
       case SUSCAN_ANALYZER_MESSAGE_TYPE_PSD:
-        emit message(PSDMessage(static_cast<struct suscan_analyzer_psd_msg *>(data)));
-        break;
-
       case SUSCAN_ANALYZER_MESSAGE_TYPE_SAMPLES:
         emit message(type, data);
         break;
